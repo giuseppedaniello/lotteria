@@ -1,6 +1,6 @@
 // Service worker: l'app funziona anche offline.
 // Cambia VERSION quando pubblichi una nuova versione dei file.
-const VERSION = 'lotteria-v6';
+const VERSION = 'lotteria-v7';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './css/app.css',
   './js/app.js', './js/config.js', './js/util.js', './js/crypto.js', './js/domain.js', './js/icons.js',
   './js/state.js', './js/views.js', './js/store-local.js', './js/store-firebase.js', './js/ticket-image.js',

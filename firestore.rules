@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Regole di sicurezza di Firestore per la Lotteria dei cesti.
+// Regole di sicurezza di Firestore per Novanta.
 // Da incollare in console.firebase.google.com → Firestore Database → Regole → Pubblica.
 // Ogni utente può leggere e scrivere solo i dati sotto users/{il suo uid}.
 service cloud.firestore {

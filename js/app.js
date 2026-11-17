@@ -68,7 +68,7 @@ function route(){
 function render(){
   const p = parts();
   document.body.className = '';
-  document.title = 'Lotteria dei cesti';
+  document.title = 'Novanta';
   let html;
   if(p[0] === 't' && p[1]) html = V.viewTicket(p[1]);
   else if(p[0] === 'r' && p[1]) html = V.viewResult(p[1]);

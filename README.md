@@ -1,4 +1,4 @@
-# Lotteria dei cesti
+# Novanta
 
 Web app (PWA, installabile su Android) per organizzare le estrazioni a premi dei cesti di Natale e Pasqua.
 Ogni biglietto è un numero da 1 a 90 e si invia con un link; vince il biglietto con lo stesso numero

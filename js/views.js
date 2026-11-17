@@ -16,15 +16,15 @@ export function errorPage(title, text){
 
 /* ---------- Accesso ---------- */
 export function viewLoading(){
-  return topBar('Lotteria dei cesti') + `<main class="wrap"><p class="intro" role="status">Caricamento…</p></main>`;
+  return topBar('Novanta') + `<main class="wrap"><p class="intro" role="status">Caricamento…</p></main>`;
 }
 export function viewStoreError(){
-  return topBar('Lotteria dei cesti') + `<main class="wrap"><div class="empty"><h2>Non riesco a collegarmi</h2>
+  return topBar('Novanta') + `<main class="wrap"><div class="empty"><h2>Non riesco a collegarmi</h2>
     <p>Per il primo avvio serve la connessione a internet, per scaricare la parte che salva i dati online. Controlla la rete e riprova.</p>
     <button class="btn primary" data-act="reload">Riprova</button></div></main>`;
 }
 export function viewLogin(){
-  return topBar('Lotteria dei cesti') + `<main class="wrap"><div class="empty"><div class="empty-art" aria-hidden="true"><span class="tok">7</span><span class="tok red">45</span><span class="tok">90</span></div><h2>Accedi per gestire le estrazioni</h2>
+  return topBar('Novanta') + `<main class="wrap"><div class="empty"><div class="empty-art" aria-hidden="true"><span class="tok">7</span><span class="tok red">45</span><span class="tok">90</span></div><h2>Accedi per gestire le estrazioni</h2>
     <p>Le estrazioni e i biglietti sono salvati online e protetti dal tuo account Google: li ritrovi su ogni telefono o computer, anche se cambi dispositivo.</p>
     <button class="btn red" data-act="sign-in">Accedi con Google</button>
     <p class="err" id="login-err" role="alert"></p>
@@ -75,7 +75,7 @@ export function viewHome(){
       (past.length ? `<div class="home-head"><h2>Concluse</h2></div>${past.map(lotCard).join('')}` : '') +
       `<a class="btn red fab" href="#/nuova">Nuova estrazione</a>`;
   }
-  return topBar('Lotteria dei cesti', {menu:'home-menu'}) + `<main class="wrap">${body}</main>`;
+  return topBar('Novanta', {menu:'home-menu'}) + `<main class="wrap">${body}</main>`;
 }
 
 /* ---------- Editor ---------- */
