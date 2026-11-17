@@ -1,0 +1,18 @@
+{
+  "name": "Lotteria dei cesti",
+  "short_name": "Lotteria",
+  "description": "Gestisci la lotteria dei cesti di Natale e Pasqua: numeri da 1 a 90, partecipanti, biglietti con link ed estrazione su una ruota del Lotto.",
+  "lang": "it",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F4F5F9",
+  "theme_color": "#1D2A6B",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

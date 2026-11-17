@@ -1,0 +1,1026 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lotteria dei cesti</title>
+<meta name="description" content="Organizza l'estrazione del cesto: biglietti numerati da 1 a 90, ognuno inviato con un link, e vincitore preso da una ruota del Lotto.">
+<meta name="theme-color" content="#1D2A6B">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+:root{
+  --ink:#1D2A6B; --ink-soft:#3A4687; --paper:#F4F5F9; --line:#D7DAE6; --muted:#596080;
+  --wood:#E3B877; --wood-hi:#F7E0B5; --wood-d:#A9773A; --wood-ink:#3B2410;
+  --red:#C8102E; --green:#1E5B45; --gold:#E0A526; --wa:#167C43;
+  --accent:var(--ink); --accent-2:var(--red); --tint:#EEF0F8;
+  --cond:"Roboto Condensed","sans-serif-condensed","Arial Narrow","Avenir Next Condensed",sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+}
+.th-natale{--accent:#1E5B45; --accent-2:#C8102E; --tint:#E8F0EC}
+.th-pasqua{--accent:#5E4596; --accent-2:#E9B100; --tint:#F1EDF8}
+.th-altro{--accent:#1D2A6B; --accent-2:#C8102E; --tint:#EEF0F8}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 var(--body);-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+a{color:var(--ink)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* App bar */
+.bar{position:sticky;top:0;z-index:6;display:flex;align-items:center;gap:4px;min-height:58px;padding:6px 6px 6px 8px;padding-top:max(6px,env(safe-area-inset-top));background:var(--ink);color:#fff}
+.bar h1{flex:1;margin:0 6px;font:700 1.3rem/1.15 var(--cond);font-stretch:condensed;letter-spacing:.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.icon-btn{flex:none;width:44px;height:44px;border:0;border-radius:50%;background:none;color:inherit;display:grid;place-items:center;cursor:pointer}
+.icon-btn:hover{background:rgba(255,255,255,.12)}
+.icon-btn svg{width:24px;height:24px}
+.logo{width:34px;height:34px;flex:none;margin-left:4px}
+.wrap{max-width:680px;margin:0 auto;padding:18px 16px 130px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 18px;border-radius:999px;border:1.5px solid transparent;font-weight:600;font-size:1rem;line-height:1.2;cursor:pointer;text-decoration:none;background:none;color:var(--ink)}
+.btn svg{width:20px;height:20px;flex:none}
+.btn.primary{background:var(--ink);color:#fff}
+.btn.red{background:var(--red);color:#fff}
+.btn.ghost{border-color:var(--ink)}
+.btn.wa{background:var(--wa);color:#fff}
+.btn.danger{color:var(--red);border-color:var(--red)}
+.btn.block{display:flex;width:100%}
+.btn.small{min-height:36px;padding:0 12px;font-size:.92rem}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.btn-row .btn{flex:1 1 140px}
+.stack{display:grid;gap:10px;margin-top:16px}
+.winner .btn-row .btn{flex:0 0 auto}
+.link-btn{border:0;background:none;padding:6px 0;color:var(--ink);text-decoration:underline;cursor:pointer;font-weight:600}
+
+/* Home list */
+.intro{margin:0 0 6px;color:var(--muted)}
+.lot-row{display:block;padding:18px 2px;border-bottom:1px solid var(--line);text-decoration:none;color:inherit}
+.lot-row:first-of-type{border-top:1px solid var(--line)}
+.lot-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.lot-row h2{margin:0;font:700 1.45rem/1.12 var(--cond);font-stretch:condensed}
+.lot-meta{margin:2px 0 0;color:var(--muted);font-size:.94rem}
+.pill{flex:none;font-size:.8rem;font-weight:700;padding:3px 10px;border-radius:999px;background:#E3E6F2;color:var(--ink)}
+.pill.done{background:var(--red);color:#fff}
+.pill.natale{background:#DDEBE3;color:var(--green)}
+.pill.pasqua{background:#E8E1F5;color:#5E4596}
+.ticks{display:grid;grid-template-columns:repeat(90,1fr);gap:1px;height:16px;margin:12px 0 6px}
+.ticks i{background:#DFE2EC;border-radius:1px}
+.ticks i.s{background:var(--wood-d)}
+.ticks i.u{background:var(--red)}
+.lot-foot{display:flex;justify-content:space-between;font-size:.9rem;color:var(--muted)}
+.empty{padding:36px 4px;text-align:left}
+.empty h2{font:700 1.7rem/1.1 var(--cond);margin:0 0 8px}
+.empty p{color:var(--muted);margin:0 0 18px;max-width:46ch}
+.notice{display:flex;gap:12px;align-items:flex-start;background:#FFF6DD;border:1px solid #EFD48A;border-radius:10px;padding:12px 14px;margin:0 0 18px;font-size:.94rem}
+.notice p{margin:0 0 6px}
+.fab{position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:5;box-shadow:0 8px 20px -6px rgba(200,16,46,.6)}
+
+/* Detail */
+.det-head{margin:0 0 14px}
+.det-head p{margin:0;color:var(--muted)}
+.det-head strong{color:var(--ink)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);margin:14px 0 4px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.stats div{padding:10px 8px 10px 12px;border-left:1px solid var(--line)}
+.stats div:first-child{border-left:0;padding-left:2px}
+.stats b{display:block;font:700 1.45rem/1.1 var(--cond);font-variant-numeric:tabular-nums}
+.stats span{font-size:.82rem;color:var(--muted)}
+.tabs{display:flex;margin:12px -16px 16px;padding:0 8px;border-bottom:1px solid var(--line)}
+.tabs a{flex:1 1 auto;white-space:nowrap;text-align:center;padding:12px 6px 10px;text-decoration:none;color:var(--muted);font-weight:600;border-bottom:3px solid transparent}
+.tabs a[aria-current="page"]{color:var(--ink);border-color:var(--red)}
+
+/* Tabellone */
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.86rem;color:var(--muted);margin:0 0 12px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:16px;height:16px;border-radius:50%;display:inline-block;position:relative}
+.lg-free{border:1.5px solid var(--line);border-radius:4px!important;background:#fff}
+.lg-sold{background:radial-gradient(circle at 35% 30%,var(--wood-hi) 0,var(--wood) 45%,var(--wood-d) 100%)}
+.lg-unpaid{background:radial-gradient(circle at 35% 30%,var(--wood-hi) 0,var(--wood) 45%,var(--wood-d) 100%)}
+.lg-unpaid::after{content:"";position:absolute;top:-2px;right:-3px;width:8px;height:8px;border-radius:50%;background:var(--red);border:1.5px solid #fff}
+.tabellone{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cartella{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;padding:5px;background:#fff;border:2px solid var(--ink);border-radius:4px}
+.cell{position:relative;aspect-ratio:1;border:1px solid #E6E8F0;border-radius:4px;background:#fff;padding:0;cursor:pointer;color:var(--ink);font:700 clamp(.9rem,3.9vw,1.2rem)/1 var(--cond);font-variant-numeric:tabular-nums;transition:transform .12s}
+.cell:active{transform:scale(.92)}
+.cell.sold{border-color:transparent;border-radius:50%;color:var(--wood-ink);background:radial-gradient(circle at 35% 30%,var(--wood-hi) 0,var(--wood) 45%,var(--wood-d) 100%);box-shadow:inset 0 -2px 0 rgba(59,36,16,.22),0 1px 2px rgba(59,36,16,.3)}
+.cell.unpaid::after{content:"";position:absolute;top:0;right:0;width:9px;height:9px;border-radius:50%;background:var(--red);border:1.5px solid #fff}
+.cell.sel{background:#DCE2FA;border:2px solid var(--ink);border-radius:4px}
+.cell.win{color:#fff;background:radial-gradient(circle at 35% 30%,#F0687B 0,var(--red) 55%,#7E0A1D 100%);box-shadow:0 0 0 2px var(--gold)}
+.board-tools{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 0}
+.hint{font-size:.88rem;color:var(--muted);margin:10px 0 0}
+.unused-selbar{position:fixed;left:0;right:0;bottom:0;z-index:8;background:var(--ink);color:#fff;padding:12px 16px calc(12px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:10px;transform:translateY(110%);transition:transform .2s ease}
+.selbar:not(.on){visibility:hidden}
+.selbar.on{transform:none}
+.selbar p{flex:1;margin:0;font-size:.95rem;line-height:1.3;min-width:0}
+.selbar p b{font:700 1.15rem var(--cond)}
+.selbar .btn.ghost{border-color:#fff;color:#fff}
+.selbar .btn.red{background:#fff;color:var(--ink)}
+
+/* Partecipanti */
+.search{width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:999px;background:#fff;margin:0 0 6px}
+.people{list-style:none;margin:0;padding:0}
+.person{display:flex;gap:10px;align-items:center;padding:12px 2px;border-bottom:1px solid var(--line)}
+.person-main{flex:1;min-width:0;cursor:pointer;background:none;border:0;padding:0;text-align:left}
+.person-name{font-weight:700;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.chip{display:inline-grid;place-items:center;min-width:30px;height:30px;padding:0 4px;border-radius:50%;font:700 .95rem var(--cond);color:var(--wood-ink);background:radial-gradient(circle at 35% 30%,var(--wood-hi) 0,var(--wood) 45%,var(--wood-d) 100%)}
+.chip.win{color:#fff;background:var(--red);box-shadow:0 0 0 2px var(--gold)}
+.paid-tag{flex:none;border:1.5px solid var(--green);color:var(--green);background:#fff;border-radius:999px;padding:4px 10px;font-size:.82rem;font-weight:700;cursor:pointer}
+.paid-tag.no{border-color:var(--red);color:var(--red)}
+.list-tools{display:flex;justify-content:space-between;align-items:center;margin:4px 0 4px;font-size:.9rem;color:var(--muted)}
+
+/* Estrazione */
+.panel{margin:0 0 22px}
+.panel h2{font:700 1.35rem/1.15 var(--cond);margin:0 0 6px}
+.panel p{margin:0 0 8px}
+.muted{color:var(--muted)}
+.ex-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:12px 0 4px}
+.ex-grid label{display:block;font-size:.8rem;color:var(--muted);text-align:center;margin:0 0 4px;font-weight:600}
+.ex-grid input{width:100%;text-align:center;font:700 1.5rem var(--cond);padding:10px 2px;border:1.5px solid var(--line);border-radius:50%;aspect-ratio:1;background:#fff;-moz-appearance:textfield}
+.ex-grid input::-webkit-outer-spin-button,.ex-grid input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ex-grid input:not(:placeholder-shown){border-color:var(--wood-d);background:radial-gradient(circle at 35% 30%,var(--wood-hi) 0,var(--wood) 55%,var(--wood-d) 100%);color:var(--wood-ink)}
+.winners{list-style:none;margin:12px 0 0;padding:0}
+.winner{display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--line)}
+.winner .tok{width:52px;height:52px;font-size:1.45rem}
+.winner h3{margin:0;font:700 1.15rem/1.2 var(--cond)}
+.winner p{margin:2px 0 0;font-size:.94rem}
+.winner .note{color:var(--muted);font-size:.86rem}
+.tok{flex:none;width:58px;height:58px;border-radius:50%;display:grid;place-items:center;font:700 1.6rem/1 var(--cond);font-variant-numeric:tabular-nums;color:var(--wood-ink);background:radial-gradient(circle at 35% 30%,var(--wood-hi) 0,var(--wood) 45%,var(--wood-d) 100%);box-shadow:inset 0 -3px 0 rgba(59,36,16,.22),0 2px 4px rgba(59,36,16,.28)}
+.tok.red{color:#fff;background:radial-gradient(circle at 35% 30%,#F0687B 0,var(--red) 55%,#7E0A1D 100%)}
+.tok.empty{background:#fff;border:2px dashed var(--line);box-shadow:none;color:var(--muted)}
+.check{display:flex;gap:10px;align-items:center;margin:12px 0 0;font-weight:600}
+.check input{width:22px;height:22px;accent-color:var(--ink)}
+@keyframes pop{0%{transform:scale(.3) rotate(-90deg);opacity:0}70%{transform:scale(1.12) rotate(8deg)}100%{transform:none;opacity:1}}
+.pop{animation:pop .45s ease-out both}
+
+/* Form / sheet */
+.sheet-back{position:fixed;inset:0;z-index:30;background:rgba(18,24,58,.5);display:flex;align-items:flex-end;justify-content:center}
+.sheet{outline:none;width:100%;max-width:560px;max-height:92vh;overflow:auto;background:#fff;border-radius:18px 18px 0 0;padding:8px 18px calc(22px + env(safe-area-inset-bottom));animation:up .22s ease-out}
+@keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+.sheet-grip{width:40px;height:4px;border-radius:2px;background:var(--line);margin:4px auto 12px}
+.sheet h2{font:700 1.4rem/1.15 var(--cond);margin:0 0 4px;padding-right:40px}
+.sheet .x{position:absolute;right:10px;top:10px}
+.sheet-in{position:relative}
+.sheet .sub{margin:0 0 6px;color:var(--muted)}
+.menu-list{list-style:none;padding:0;margin:8px -6px 0}
+.menu-list button,.menu-list a{display:flex;width:100%;gap:14px;align-items:center;padding:14px 8px;border:0;background:none;text-align:left;cursor:pointer;border-radius:10px;text-decoration:none;color:var(--ink);font-weight:600}
+.menu-list button:hover,.menu-list a:hover{background:var(--paper)}
+.menu-list svg{width:22px;height:22px;flex:none}
+.menu-list small{display:block;font-weight:400;color:var(--muted)}
+.menu-list .danger{color:var(--red)}
+label.f{display:block;font-weight:600;font-size:.92rem;margin:14px 0 6px}
+.field{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+.field:focus{border-color:var(--ink);outline:none;box-shadow:0 0 0 3px rgba(29,42,107,.15)}
+textarea.field{min-height:84px;resize:vertical}
+.help{font-size:.84rem;color:var(--muted);margin:5px 0 0}
+.err{color:var(--red);font-size:.88rem;font-weight:600;margin:8px 0 0;min-height:1em}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.seg{display:flex;background:var(--paper);border-radius:999px;padding:4px;margin:12px 0 2px}
+.seg label{flex:1;text-align:center;padding:8px;border-radius:999px;cursor:pointer;font-weight:600;font-size:.94rem;color:var(--muted)}
+.seg input{position:absolute;opacity:0}
+.seg input:checked+span{color:var(--ink)}
+.seg label:has(input:checked){background:#fff;box-shadow:0 1px 3px rgba(29,42,107,.2);color:var(--ink)}
+.prize-row{display:grid;grid-template-columns:118px 1fr 44px;gap:8px;align-items:center;margin:0 0 8px}
+.theme-pick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.theme-pick label{display:block;border:2px solid var(--line);border-radius:10px;padding:10px;text-align:center;cursor:pointer;font-weight:600}
+.theme-pick input{position:absolute;opacity:0}
+.theme-pick label:has(input:checked){border-color:var(--ink);background:#EEF0F8}
+.theme-pick label:has(input:focus-visible){outline:3px solid var(--gold)}
+.theme-pick i{display:block;height:10px;border-radius:5px;margin:0 0 8px}
+.edit-nums{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 0}
+.edit-nums button{display:inline-flex;align-items:center;gap:4px;border:0;border-radius:999px;padding:4px 10px 4px 4px;background:var(--paper);cursor:pointer;font-weight:600}
+.edit-nums .chip{width:30px}
+.addnum{display:flex;gap:8px;margin-top:10px}
+.addnum .field{max-width:120px}
+.form-actions{position:sticky;bottom:calc(-22px - env(safe-area-inset-bottom));background:#fff;padding:14px 0 calc(8px + env(safe-area-inset-bottom));margin-top:10px;display:flex;gap:8px}
+.form-actions .btn{flex:1}
+.shared-ok{display:flex;gap:12px;align-items:center;margin:4px 0 4px}
+
+/* Toast */
+.toast{position:fixed;left:50%;top:calc(70px + env(safe-area-inset-top));transform:translateX(-50%);z-index:50;background:#151C48;color:#fff;padding:12px 18px;border-radius:999px;font-weight:600;font-size:.94rem;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:calc(100% - 32px);text-align:center}
+
+/* Biglietto */
+.tk-page{min-height:100vh;background:var(--tint);padding:24px 16px 40px;padding-top:max(24px,env(safe-area-inset-top))}
+.ticket{max-width:430px;margin:0 auto;background:#fff;border-radius:14px;box-shadow:0 14px 34px -14px rgba(20,28,72,.45);position:relative}
+.tk-head{position:relative;background:var(--accent);color:#fff;padding:22px 74px 24px 22px;border-radius:14px 14px 0 0;overflow:hidden}
+.tk-head::after{content:"";position:absolute;left:0;right:0;bottom:0;height:7px;background:repeating-linear-gradient(-45deg,var(--accent-2) 0 8px,#fff 8px 16px)}
+.tk-orn{position:absolute;right:18px;top:20px;width:44px;height:44px}
+.tk-head h1{margin:0;font:700 2.05rem/1.02 var(--cond);font-stretch:condensed;text-wrap:balance}
+.tk-head p{margin:8px 0 0;opacity:.88;font-size:.95rem}
+.tk-body{padding:18px 22px 16px}
+.tk-holder{margin:0;font-size:1.05rem}
+.tk-holder strong{font:700 1.3rem var(--cond)}
+.tk-tokens{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 18px}
+.facts{margin:0;display:grid;gap:10px}
+.facts div{display:grid;grid-template-columns:104px 1fr;gap:8px}
+.facts dt{color:var(--muted);font-size:.9rem}
+.facts dd{margin:0;font-weight:600}
+.prizes{list-style:none;margin:16px 0 0;padding:14px 0 0;border-top:1px solid var(--line)}
+.prizes li{display:flex;gap:10px;align-items:baseline;margin:0 0 6px}
+.prizes .pos{flex:none;min-width:84px;font:700 1rem var(--cond);color:var(--accent)}
+.rule{font-size:.86rem;color:var(--muted);margin:10px 0 0}
+.notes{font-size:.9rem;margin:10px 0 0;white-space:pre-line}
+.tk-perf{position:relative;border-top:2px dashed var(--line);margin:0 16px}
+.tk-perf::before,.tk-perf::after{content:"";position:absolute;top:-13px;width:24px;height:24px;border-radius:50%;background:var(--tint)}
+.tk-perf::before{left:-28px}.tk-perf::after{right:-28px}
+.tk-stub{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 22px 18px}
+.tk-stub span{color:var(--muted);font-size:.86rem}
+.tk-stub .tk-code{font:700 1.6rem/1 var(--cond);letter-spacing:.14em;color:var(--ink)}
+.tk-after{max-width:430px;margin:18px auto 0;text-align:center}
+.tk-count{font:700 1.2rem/1.2 var(--cond);margin:0 0 14px}
+.tk-after .btn{margin:0 0 10px}
+.tk-foot{font-size:.86rem;color:var(--muted);margin:10px 0 0}
+.tk-admin{display:inline-block;margin-top:14px;font-weight:600}
+.res-ex{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px}
+.res-ex .tok{width:50px;height:50px;font-size:1.35rem}
+.res-ex figure{margin:0;text-align:center}
+.res-ex figcaption{font-size:.76rem;color:var(--muted);margin-top:4px}
+
+
+/* v2: un biglietto = un numero */
+.det-head .prize{font:700 1.2rem/1.25 var(--cond);color:var(--ink);margin:0 0 4px}
+.stats small{font-size:.9rem;font-weight:600}
+.lot-meta+.lot-meta{margin-top:0}
+.tok.sm{width:44px;height:44px;font-size:1.3rem}
+.tok.xl{width:112px;height:112px;font-size:3.4rem;box-shadow:inset 0 -5px 0 rgba(59,36,16,.22),0 4px 10px rgba(59,36,16,.3)}
+.tok.unpaid-tok{position:relative}
+.tok.unpaid-tok::after{content:"";position:absolute;top:2px;right:2px;width:12px;height:12px;border-radius:50%;background:var(--red);border:2px solid #fff}
+.tk-line{display:flex;align-items:center;gap:12px}
+.sheet-hero{display:flex;gap:14px;align-items:center;margin:0 0 6px;padding-right:40px}
+.sheet-hero h2{padding-right:0}
+.sheet-hero .sub{margin:0}
+.cell.out{color:var(--red);text-decoration:line-through;border-color:#F0A3AE}
+.winner.big{align-items:center;border:0;padding:4px 0 8px}
+.winner.big h2{margin:0;font:700 1.6rem/1.1 var(--cond)}
+.winner.big p{margin:4px 0 0}
+.notice.ok{background:#E3F2EA;border-color:#9CCBB0}
+.notice.ko{background:#FDE7EA;border-color:#F0A3AE}
+.tk-hero{display:flex;gap:18px;align-items:center;margin:0 0 18px}
+.tk-hero p{margin:0}
+.tk-hero .lbl,.tk-stub .lbl{color:var(--muted);font-size:.9rem}
+.tk-hero .who{font:700 1.5rem/1.15 var(--cond);margin:2px 0 4px}
+.tk-stub .tk-num{font:700 1.6rem/1 var(--cond);color:var(--accent)}
+.facts div{grid-template-columns:96px 1fr}
+
+@media (min-width:600px){.wrap{padding-top:26px}.sheet{border-radius:18px;margin-bottom:24px}.sheet-back{align-items:center}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media print{.tk-after,.bar,.fab{display:none}.tk-page{background:#fff}.ticket{box-shadow:none;border:1px solid #999}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="sheet-root"></div>
+<noscript><p style="padding:20px">Per usare la lotteria attiva JavaScript.</p></noscript>
+<script>
+'use strict';
+/* ---------- Costanti ---------- */
+const OFFICIAL_URL = 'https://www.sisal.it/lotto/ultima-estrazione'; // pagina dove controllare i numeri estratti: cambiala se preferisci un altro sito
+const WHEELS = ['Bari','Cagliari','Firenze','Genova','Milano','Napoli','Palermo','Roma','Torino','Venezia','Nazionale'];
+const STORE_KEY = 'lotteria-cesti.v2';
+const ALPH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const THEMES = {natale:'Natale', pasqua:'Pasqua', altro:'Altro'};
+const RULES = {
+  next: "Se il numero estratto non è stato venduto, vale l'estratto successivo.",
+  none: "Se il numero estratto non è stato venduto, il premio resta all'organizzatore."
+};
+
+/* ---------- Icone ---------- */
+const I = {
+  back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  more:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>',
+  close:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>',
+  wa:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm0 18.2a8.2 8.2 0 01-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1112 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 01-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 00-.7.3 3 3 0 00-.9 2.2 5.2 5.2 0 001.1 2.7 11.8 11.8 0 004.5 4c1.7.7 2.4.8 3.2.6a2.8 2.8 0 001.8-1.3 2.3 2.3 0 00.2-1.3c-.1-.1-.3-.2-.5-.3z"/></svg>',
+  copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a1 1 0 011-1h10"/></svg>',
+  eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+  edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/></svg>',
+  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+  down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
+  up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M7 9l5-5 5 5M5 20h14"/></svg>',
+  shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>',
+  dup:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 00-1-1H5a1 1 0 00-1 1v10a1 1 0 001 1h3"/></svg>',
+  table:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg>',
+  help:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1-1.5 2.2M12 17h.01"/></svg>',
+  dice:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.2" fill="currentColor"/><circle cx="15" cy="15" r="1.2" fill="currentColor"/><circle cx="15" cy="9" r="1.2" fill="currentColor"/><circle cx="9" cy="15" r="1.2" fill="currentColor"/></svg>'
+};
+const LOGO = '<svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><defs><radialGradient id="lg" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#F7E0B5"/><stop offset=".5" stop-color="#E3B877"/><stop offset="1" stop-color="#A9773A"/></radialGradient></defs><circle cx="20" cy="20" r="18" fill="url(#lg)"/><text x="20" y="26.5" text-anchor="middle" font-family="Roboto Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="17" fill="#3B2410">90</text></svg>';
+const ORN = {
+  natale:'<svg class="tk-orn" viewBox="0 0 24 24" aria-hidden="true"><path fill="var(--gold)" d="M12 1.8l2.9 6.4 7 .7-5.3 4.7 1.5 6.9L12 16.9l-6.1 3.6 1.5-6.9L2.1 8.9l7-.7z"/></svg>',
+  pasqua:'<svg class="tk-orn" viewBox="0 0 24 24" aria-hidden="true"><path fill="var(--accent-2)" d="M12 1.5C8 1.5 4.6 8.6 4.6 14a7.4 7.4 0 0014.8 0c0-5.4-3.4-12.5-7.4-12.5z"/><path d="M5.2 12.4l2.3-1.8 2.3 1.8 2.2-1.8 2.3 1.8 2.3-1.8 2.2 1.8" fill="none" stroke="#fff" stroke-width="1.5"/></svg>',
+  altro:'<svg class="tk-orn" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="var(--wood)"/><circle cx="12" cy="12" r="6.5" fill="none" stroke="var(--wood-d)" stroke-width="1.5"/></svg>'
+};
+
+
+/* ---------- Utilità ---------- */
+const $ = (s, r=document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function rid(n=6){ const a=new Uint8Array(n); crypto.getRandomValues(a); return Array.from(a, x => ALPH[x & 31]).join(''); }
+function randInt(max){ const a=new Uint32Array(1), lim=Math.floor(0x100000000/max)*max; do{ crypto.getRandomValues(a); }while(a[0]>=lim); return a[0]%max; }
+const euro = n => (Number(n)||0).toLocaleString('it-IT',{style:'currency',currency:'EUR'});
+const ord = n => n + '°';
+function parseD(d){ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(d||''); return m ? new Date(+m[1], +m[2]-1, +m[3]) : null; }
+function fmtDate(d){ const x=parseD(d); return x ? x.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) : 'data da definire'; }
+function fmtShort(d){ const x=parseD(d); return x ? x.toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'}) : 'data da definire'; }
+function drawMoment(d, tm){ const x=parseD(d); if(!x) return null; const [h,m]=(tm||'20:00').split(':').map(Number); x.setHours(h||0, m||0, 0, 0); return x; }
+function countdown(d, tm){
+  const t = drawMoment(d, tm); if(!t) return '';
+  const diff = t - Date.now(); if(diff <= 0) return '';
+  const days = Math.floor(diff/864e5);
+  if(days >= 1) return days === 1 ? "Manca 1 giorno all'estrazione" : `Mancano ${days} giorni all'estrazione`;
+  const h = Math.floor(diff/36e5);
+  if(h >= 1) return h === 1 ? "Manca 1 ora all'estrazione" : `Mancano ${h} ore all'estrazione`;
+  const m = Math.max(1, Math.floor(diff/6e4));
+  return m === 1 ? "Manca 1 minuto all'estrazione" : `Mancano ${m} minuti all'estrazione`;
+}
+function wheelName(w){ return w === 'Nazionale' ? 'ruota Nazionale' : 'ruota di ' + w; }
+function wheelLabel(w){ return w === 'live' ? 'estrazione dal vivo' : 'Lotto, ' + wheelName(w); }
+/* "il 45 esce come 1° estratto sulla ruota di Napoli" */
+function winPhrase(n, pos, w){ return w === 'live' ? `il ${n} è il ${pos === 1 ? 'primo numero estratto' : ord(pos) + ' numero estratto'}` : `il ${n} esce come ${ord(pos)} estratto sulla ${wheelName(w)}`; }
+function isDrawDay(d){ const x=parseD(d); return !!x && [2,4,5,6].includes(x.getDay()); }
+function firstName(n){ return String(n||'').trim().split(/\s+/)[0] || ''; }
+function parsePrice(v){ const n=parseFloat(String(v||'').replace(',', '.')); return isFinite(n) && n>=0 ? Math.round(n*100)/100 : 0; }
+function baseUrl(){ return location.href.split('#')[0]; }
+const sameName = (a, b) => String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+function waPhone(p){
+  const raw=String(p||'').trim(); if(!raw) return '';
+  let d=raw.replace(/\D/g,'');
+  if(raw.startsWith('+')) return d;
+  if(d.startsWith('00')) return d.slice(2);
+  if(d.length===10 && d.startsWith('3')) return '39'+d;
+  return d.length>=8 ? d : '';
+}
+
+/* ---------- SHA-256 / HMAC (sincroni, funzionano anche senza HTTPS) ---------- */
+const K256 = new Uint32Array([0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
+function sha256(msg){
+  const l = msg.length, nb = ((l + 9 + 63) >> 6) << 6;
+  const b = new Uint8Array(nb); b.set(msg); b[l] = 0x80;
+  const bits = l * 8; const dv = new DataView(b.buffer);
+  dv.setUint32(nb-4, bits >>> 0); dv.setUint32(nb-8, Math.floor(bits / 0x100000000));
+  const H = new Uint32Array([0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19]);
+  const W = new Uint32Array(64);
+  const rotr = (x,n) => (x>>>n) | (x<<(32-n));
+  for(let o=0; o<nb; o+=64){
+    for(let i=0;i<16;i++) W[i] = dv.getUint32(o+i*4);
+    for(let i=16;i<64;i++){
+      const s0 = rotr(W[i-15],7) ^ rotr(W[i-15],18) ^ (W[i-15]>>>3);
+      const s1 = rotr(W[i-2],17) ^ rotr(W[i-2],19) ^ (W[i-2]>>>10);
+      W[i] = (W[i-16] + s0 + W[i-7] + s1) >>> 0;
+    }
+    let [a,b2,c,d,e,f,g,h] = H;
+    for(let i=0;i<64;i++){
+      const S1 = rotr(e,6) ^ rotr(e,11) ^ rotr(e,25);
+      const ch = (e & f) ^ (~e & g);
+      const t1 = (h + S1 + ch + K256[i] + W[i]) >>> 0;
+      const S0 = rotr(a,2) ^ rotr(a,13) ^ rotr(a,22);
+      const mj = (a & b2) ^ (a & c) ^ (b2 & c);
+      const t2 = (S0 + mj) >>> 0;
+      h=g; g=f; f=e; e=(d + t1)>>>0; d=c; c=b2; b2=a; a=(t1 + t2)>>>0;
+    }
+    H[0]=(H[0]+a)>>>0; H[1]=(H[1]+b2)>>>0; H[2]=(H[2]+c)>>>0; H[3]=(H[3]+d)>>>0;
+    H[4]=(H[4]+e)>>>0; H[5]=(H[5]+f)>>>0; H[6]=(H[6]+g)>>>0; H[7]=(H[7]+h)>>>0;
+  }
+  const out = new Uint8Array(32); const ov = new DataView(out.buffer);
+  H.forEach((x,i) => ov.setUint32(i*4, x)); return out;
+}
+const enc = s => new TextEncoder().encode(s);
+function hmac(key, msg){
+  let k = enc(key); if(k.length > 64) k = sha256(k);
+  const kp = new Uint8Array(64); kp.set(k);
+  const ip = kp.map(x => x ^ 0x36), op = kp.map(x => x ^ 0x5c);
+  const m = enc(msg);
+  const inner = new Uint8Array(64 + m.length); inner.set(ip); inner.set(m, 64);
+  const ih = sha256(inner);
+  const outer = new Uint8Array(96); outer.set(op); outer.set(ih, 64);
+  return sha256(outer);
+}
+function bytesB64u(bytes){ let s=''; bytes.forEach(b => s += String.fromCharCode(b)); return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+function b64e(str){ return bytesB64u(enc(str)); }
+function b64d(s){ s = s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length % 4) s += '='; const bin = atob(s); return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))); }
+
+function sigMsg(lid, t){ return [lid, t.code, t.n, String(t.name).trim()].join('|'); }
+function ticketSig(lot, t){ return bytesB64u(hmac(lot.secret, sigMsg(lot.id, t)).slice(0, 9)); }
+
+/* ---------- Archivio locale ---------- */
+let state = load();
+function load(){
+  try{ const s = JSON.parse(localStorage.getItem(STORE_KEY)); if(s && Array.isArray(s.lotteries)) return s; }catch(e){}
+  return {v:2, lotteries:[], lastBackup:0, lastChange:0};
+}
+function save(){
+  state.lastChange = Date.now();
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+  catch(e){ toast('Salvataggio non riuscito: la memoria del browser è piena.'); }
+}
+const getLot = id => state.lotteries.find(l => l.id === id);
+const ticketOf = (lot, n) => lot.tickets.find(t => t.n === n);
+const byNum = lot => [...lot.tickets].sort((a,b) => a.n - b.n);
+function lotStats(lot){
+  let paid=0, due=0;
+  lot.tickets.forEach(t => { if(t.paid) paid += lot.price||0; else due += lot.price||0; });
+  return {sold:lot.tickets.length, paid, due};
+}
+/* Esito: parte dall'estratto scelto (es. 1°); se il numero non è venduto e la regola lo prevede, passa al successivo */
+function outcome(lot){
+  const ex = (lot.result && lot.result.extracted) || [];
+  const skipped = [];
+  for(let k = lot.pos; k <= 5; k++){
+    const n = ex[k-1];
+    if(!n) return {winner:null, skipped, pending:true, nextPos:k};
+    const t = ticketOf(lot, n);
+    if(t) return {winner:t, number:n, from:k, skipped};
+    skipped.push({n, pos:k});
+    if(lot.rule === 'none') return {winner:null, skipped, pending:false};
+  }
+  return {winner:null, skipped, pending:false};
+}
+
+/* ---------- Link: biglietto e risultati ---------- */
+function ticketPayload(lot, t){
+  return {v:2, i:lot.id, c:t.code, h:t.name, n:t.n, l:lot.name, z:lot.prize, o:lot.organizer||'', k:lot.contact||'',
+    th:lot.theme, d:lot.drawDate||'', tm:lot.drawTime||'', w:lot.wheel, ps:lot.pos, r:lot.rule, q:lot.price||0,
+    x:(lot.notes||'').slice(0, 400), s:ticketSig(lot, t)};
+}
+const ticketLink = (lot, t) => baseUrl() + '#/t/' + b64e(JSON.stringify(ticketPayload(lot, t)));
+function resultPayload(lot, withName){
+  const o = outcome(lot);
+  return {v:2, l:lot.name, z:lot.prize, o:lot.organizer||'', th:lot.theme, d:lot.drawDate||'', tm:lot.drawTime||'', w:lot.wheel, ps:lot.pos,
+    e:(lot.result.extracted||[]).map(n => n||0), n:o.winner ? o.number : 0, f:o.winner ? o.from : 0, h:(withName && o.winner) ? o.winner.name : ''};
+}
+const resultLink = (lot, nm) => baseUrl() + '#/r/' + b64e(JSON.stringify(resultPayload(lot, nm)));
+const str = (v, max=200) => typeof v === 'string' ? v.slice(0, max) : '';
+const okNum = v => { v = parseInt(v); return v>=1 && v<=90 ? v : 0; };
+const okPos = v => Math.min(5, Math.max(1, parseInt(v)||1));
+const okWheel = w => (w === 'live' || WHEELS.includes(w)) ? w : 'Napoli';
+function decodeTicket(seg){
+  try{
+    const p = JSON.parse(b64d(seg));
+    if(!p || p.v !== 2 || !okNum(p.n)) return null;
+    return {i:str(p.i,40), c:str(p.c,20), h:str(p.h,80), n:okNum(p.n), l:str(p.l,120)||'Lotteria', z:str(p.z,160), o:str(p.o,80), k:str(p.k,80),
+      th: THEMES[p.th] ? p.th : 'altro', d:str(p.d,10), tm:str(p.tm,5), w:okWheel(p.w), ps:okPos(p.ps),
+      r: p.r === 'none' ? 'none' : 'next', q: Math.max(0, Number(p.q)||0), x:str(p.x,400), s:str(p.s,40)};
+  }catch(e){ return null; }
+}
+function decodeResult(seg){
+  try{
+    const p = JSON.parse(b64d(seg)); if(!p || p.v !== 2 || !Array.isArray(p.e)) return null;
+    return {l:str(p.l,120)||'Lotteria', z:str(p.z,160), o:str(p.o,80), th: THEMES[p.th] ? p.th : 'altro', d:str(p.d,10), tm:str(p.tm,5),
+      w:okWheel(p.w), ps:okPos(p.ps), e:p.e.slice(0,5).map(okNum), n:okNum(p.n), f:okPos(p.f), h:str(p.h,80)};
+  }catch(e){ return null; }
+}
+
+/* ---------- Messaggi da inviare ---------- */
+const themeEmoji = th => th==='natale' ? '🎄 ' : th==='pasqua' ? '🐣 ' : '';
+function ticketMessage(lot, t){
+  const nm = firstName(t.name);
+  return `${themeEmoji(lot.theme)}Ciao${nm ? ' ' + nm : ''}! Ecco il tuo biglietto n. ${t.n} per «${lot.name}». ` +
+    `Vinci ${lot.prize ? '«' + lot.prize + '» ' : ''}se ${winPhrase(t.n, lot.pos, lot.wheel)}. Estrazione: ${fmtDate(lot.drawDate)}, ore ${lot.drawTime || '20:00'}.\nConserva questo link, è il tuo biglietto:`;
+}
+function bundleMessage(lot, list){
+  const nm = firstName(list[0].name);
+  return `${themeEmoji(lot.theme)}Ciao${nm ? ' ' + nm : ''}! Ecco i tuoi ${list.length} biglietti per «${lot.name}»: ${list.map(t => t.n).join(', ')}. ` +
+    `Vinci ${lot.prize ? '«' + lot.prize + '» ' : ''}se uno dei tuoi numeri è il ${ord(lot.pos)} estratto ${lot.wheel === 'live' ? 'dal vivo' : 'sulla ' + wheelName(lot.wheel)}. Estrazione: ${fmtDate(lot.drawDate)}, ore ${lot.drawTime || '20:00'}.\n` +
+    list.map(t => `Biglietto n. ${t.n}: ${ticketLink(lot, t)}`).join('\n');
+}
+function winnerMessage(lot, o){
+  return `${themeEmoji(lot.theme)}Complimenti ${firstName(o.winner.name)}! È uscito il ${o.number}: con il tuo biglietto hai vinto ${lot.prize ? '«' + lot.prize + '»' : 'il premio'} di «${lot.name}». Ci sentiamo per la consegna!`;
+}
+function resultMessage(lot){
+  const o = outcome(lot);
+  const line = o.winner ? `Il numero vincente è il ${o.number} (${ord(o.from)} estratto${lot.wheel === 'live' ? '' : ', ' + wheelName(lot.wheel)}).` : 'Il numero estratto non era stato venduto: nessun vincitore.';
+  return `${themeEmoji(lot.theme)}Estrazione di «${lot.name}» del ${fmtShort(lot.drawDate)}. ${line}\nDettagli:`;
+}
+
+/* ---------- Condivisione ---------- */
+async function copyText(s){
+  try{ await navigator.clipboard.writeText(s); return true; }
+  catch(e){
+    const ta = document.createElement('textarea'); ta.value = s; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select(); let ok=false; try{ ok = document.execCommand('copy'); }catch(_){}
+    ta.remove(); return ok;
+  }
+}
+function openWhatsApp(phone, text){ window.open('https://wa.me/' + (waPhone(phone) || '') + '?text=' + encodeURIComponent(text), '_blank', 'noopener'); }
+async function shareAny(title, text, url){
+  if(navigator.share){ try{ await navigator.share(url ? {title, text, url} : {title, text}); return; }catch(e){ if(e && e.name === 'AbortError') return; } }
+  if(await copyText(url ? text + '\n' + url : text)) toast('Messaggio copiato: incollalo dove vuoi');
+}
+
+/* ---------- Toast ---------- */
+let toastTimer;
+function toast(msg){
+  let el = $('.toast'); if(!el){ el = document.createElement('div'); el.className='toast'; el.setAttribute('role','status'); document.body.appendChild(el); }
+  el.textContent = msg; el.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => el.hidden = true, 2800);
+}
+
+/* ---------- Stato interfaccia ---------- */
+const ui = {lotId:null, n:null, q:'', nameInResult:false, lastRoute:''};
+
+/* ---------- Router ---------- */
+const app = $('#app');
+function route(){
+  const h = location.hash.replace(/^#\/?/, '');
+  const parts = h.split('/');
+  const key = parts.slice(0, 3).join('/');
+  if(key !== ui.lastRoute){ ui.q=''; window.scrollTo(0,0); }
+  ui.lastRoute = key;
+  closeSheet();
+  document.body.className = '';
+  document.title = 'Lotteria dei cesti';
+  let html;
+  if(parts[0] === 't' && parts[1]) html = viewTicket(parts[1]);
+  else if(parts[0] === 'r' && parts[1]) html = viewResult(parts[1]);
+  else if(parts[0] === 'nuova') html = viewEditor(null);
+  else if(parts[0] === 'modifica' && getLot(parts[1])) html = viewEditor(getLot(parts[1]));
+  else if(parts[0] === 'l' && getLot(parts[1])){ ui.lotId = parts[1]; html = viewLottery(getLot(parts[1]), parts[2] || 'tabellone'); }
+  else if(parts[0] === 'verifica') html = viewVerify();
+  else html = viewHome();
+  app.innerHTML = html;
+}
+function rerender(){ const y = window.scrollY; route(); window.scrollTo(0, y); }
+window.addEventListener('hashchange', route);
+
+/* ---------- Viste: elenco ---------- */
+function topBar(title, {back, menu}={}){
+  return `<header class="bar">${back ? `<a class="icon-btn" href="${back}" aria-label="Indietro">${I.back}</a>` : LOGO}<h1>${esc(title)}</h1>${menu ? `<button class="icon-btn" data-act="${menu}" aria-label="Altre azioni">${I.more}</button>` : ''}</header>`;
+}
+function ticksHtml(lot){
+  let s='';
+  for(let n=1;n<=90;n++){ const t = ticketOf(lot, n); s += `<i class="${t ? (t.paid ? 's' : 'u') : ''}"></i>`; }
+  return `<div class="ticks" aria-hidden="true">${s}</div>`;
+}
+function viewHome(){
+  const lots = [...state.lotteries].sort((a,b) => (b.drawDate||'').localeCompare(a.drawDate||''));
+  const anyTickets = lots.some(l => l.tickets.length);
+  const needBackup = anyTickets && (state.lastChange||0) > (state.lastBackup||0) && Date.now() - (state.lastBackup||0) > 3*864e5;
+  let body;
+  if(!lots.length){
+    body = `<div class="empty"><h2>Nessuna estrazione, per ora</h2>
+      <p>Crea un'estrazione: scegli il premio, la data e la ruota del Lotto. Poi cedi i biglietti dal tabellone: ogni biglietto è un numero da 1 a 90 e vince chi ha il numero estratto.</p>
+      <a class="btn red" href="#/nuova">Crea un'estrazione</a></div>`;
+  } else {
+    body = (needBackup ? `<div class="notice" role="note"><div><p>I dati sono salvati solo su questo telefono. Scarica un backup ogni tanto, così non perdi nulla se cambi telefono o cancelli i dati del browser.</p><button class="link-btn" data-act="export">Scarica il backup</button></div></div>` : '') +
+      lots.map(l => {
+        const st = lotStats(l), o = l.result ? outcome(l) : null;
+        const status = o && !o.pending ? `<span class="pill done">${o.winner ? 'Vinto dal ' + o.number : 'Estratta'}</span>` : `<span class="pill ${l.theme}">${THEMES[l.theme]}</span>`;
+        return `<a class="lot-row" href="#/l/${l.id}"><div class="lot-top"><h2>${esc(l.name)}</h2>${status}</div>
+          <p class="lot-meta">${esc(l.prize)}</p>
+          <p class="lot-meta">${esc(fmtDate(l.drawDate))}, ${ord(l.pos)} estratto, ${esc(wheelLabel(l.wheel))}</p>
+          ${ticksHtml(l)}
+          <div class="lot-foot"><span>${st.sold} biglietti su 90</span><span>${euro(st.paid)} incassati</span></div></a>`;
+      }).join('') +
+      `<a class="btn red fab" href="#/nuova">Nuova estrazione</a>`;
+  }
+  return topBar('Lotteria dei cesti', {menu:'home-menu'}) + `<main class="wrap">${body}</main>`;
+}
+
+/* ---------- Vista: editor ---------- */
+function viewEditor(lot){
+  const isNew = !lot;
+  const y = new Date().getFullYear();
+  const L = lot || {name:'', prize:'', theme:(new Date().getMonth() >= 6 ? 'natale' : 'pasqua'), organizer:'', contact:'', price:2, drawDate:'', drawTime:'20:00', wheel:'Napoli', pos:1, rule:'next', notes:''};
+  const wheelOpts = WHEELS.map(w => `<option value="${w}" ${L.wheel===w?'selected':''}>${w}</option>`).join('') +
+    `<option value="live" ${L.wheel==='live'?'selected':''}>Estrazione dal vivo (sacchetto)</option>`;
+  let posOpts=''; for(let k=1;k<=5;k++) posOpts += `<option value="${k}" ${L.pos==k?'selected':''}>${ord(k)} estratto</option>`;
+  const sw = k => k==='natale' ? 'repeating-linear-gradient(-45deg,#C8102E 0 6px,#1E5B45 6px 12px)' : k==='pasqua' ? 'repeating-linear-gradient(-45deg,#5E4596 0 6px,#E9B100 6px 12px)' : 'repeating-linear-gradient(-45deg,#1D2A6B 0 6px,#E3B877 6px 12px)';
+  const themes = Object.entries(THEMES).map(([k,v]) => `<label><input type="radio" name="theme" value="${k}" ${L.theme===k?'checked':''}><i style="background:${sw(k)}"></i>${v}</label>`).join('');
+  const locked = !isNew && lot.tickets.length;
+  return topBar(isNew ? 'Nuova estrazione' : 'Modifica estrazione', {back: isNew ? '#/' : '#/l/' + lot.id}) + `<main class="wrap">
+  <form data-form="lottery" data-id="${lot ? lot.id : ''}" novalidate>
+    <label class="f" for="f-name">Nome dell'estrazione</label>
+    <input class="field" id="f-name" name="name" value="${esc(L.name)}" placeholder="es. Cesto di Natale ${y}" maxlength="80">
+    <p class="help">Il motivo per cui la organizzi: compare in grande sul biglietto.</p>
+    <label class="f" for="f-prize">Premio</label>
+    <input class="field" id="f-prize" name="prize" value="${esc(L.prize)}" placeholder="es. Cesto con panettone, spumante e salumi" maxlength="160">
+    <label class="f">Tema del biglietto</label>
+    <div class="theme-pick">${themes}</div>
+    <div class="two">
+      <div><label class="f" for="f-date">Data estrazione</label><input class="field" type="date" id="f-date" name="drawDate" value="${esc(L.drawDate)}"></div>
+      <div><label class="f" for="f-time">Ora</label><input class="field" type="time" id="f-time" name="drawTime" value="${esc(L.drawTime||'20:00')}"></div>
+    </div>
+    <div class="two">
+      <div><label class="f" for="f-pos">Numero vincente</label><select class="field" id="f-pos" name="pos">${posOpts}</select></div>
+      <div><label class="f" for="f-wheel">Ruota</label><select class="field" id="f-wheel" name="wheel">${wheelOpts}</select></div>
+    </div>
+    <p class="help">Il Lotto estrae il martedì, giovedì, venerdì e sabato alle 20:00. Controlla le festività sul calendario ufficiale.</p>
+    <label class="f" for="f-rule">Se il numero estratto non è stato venduto</label>
+    <select class="field" id="f-rule" name="rule">
+      <option value="next" ${L.rule==='next'?'selected':''}>Vale l'estratto successivo</option>
+      <option value="none" ${L.rule==='none'?'selected':''}>Nessun vincitore, il premio resta all'organizzatore</option>
+    </select>
+    <div class="two">
+      <div><label class="f" for="f-price">Prezzo del biglietto (€)</label><input class="field" id="f-price" name="price" inputmode="decimal" value="${esc(String(L.price ?? '').replace('.', ','))}"></div>
+      <div><label class="f" for="f-org">Organizzatore</label><input class="field" id="f-org" name="organizer" value="${esc(L.organizer)}" maxlength="60" placeholder="Il tuo nome"></div>
+    </div>
+    <label class="f" for="f-contact">Contatto sul biglietto (facoltativo)</label>
+    <input class="field" id="f-contact" name="contact" value="${esc(L.contact)}" maxlength="60" placeholder="es. 333 1234567">
+    <label class="f" for="f-notes">Note per i partecipanti (facoltative)</label>
+    <textarea class="field" id="f-notes" name="notes" maxlength="400" placeholder="es. Il cesto si ritira in parrocchia entro il 6 gennaio.">${esc(L.notes)}</textarea>
+    ${locked ? '<p class="help">Hai già ceduto dei biglietti? Se cambi premio, data o ruota, rimanda il link: i biglietti già inviati mostrano i dati vecchi.</p>' : ''}
+    <p class="err" id="f-err" role="alert"></p>
+    <div class="form-actions"><button class="btn primary">${isNew ? "Crea l'estrazione" : 'Salva le modifiche'}</button></div>
+  </form></main>`;
+}
+
+/* ---------- Vista: estrazione (gestione) ---------- */
+function viewLottery(lot, tab){
+  const st = lotStats(lot);
+  const tabs = [['tabellone','Tabellone'],['biglietti',`Biglietti (${lot.tickets.length})`],['estrazione','Estrazione']];
+  const content = tab === 'biglietti' ? listHtml(lot) : tab === 'estrazione' ? drawHtml(lot) : boardHtml(lot);
+  return topBar(lot.name, {back:'#/', menu:'lot-menu'}) + `<main class="wrap">
+    <div class="det-head"><p class="prize">${esc(lot.prize)}</p><p><strong>${esc(fmtDate(lot.drawDate))}</strong>, ore ${esc(lot.drawTime||'20:00')}</p><p>Vince il ${ord(lot.pos)} estratto, ${esc(wheelLabel(lot.wheel))}</p></div>
+    <div class="stats"><div><b>${st.sold}<small> / 90</small></b><span>biglietti ceduti</span></div><div><b>${euro(st.paid)}</b><span>incassati</span></div><div><b>${euro(st.due)}</b><span>da incassare</span></div></div>
+    <nav class="tabs">${tabs.map(([k,v]) => `<a href="#/l/${lot.id}/${k}" ${k===tab?'aria-current="page"':''}>${v}</a>`).join('')}</nav>
+    ${content}</main>`;
+}
+function boardHtml(lot){
+  const o = lot.result ? outcome(lot) : null;
+  const win = o && o.winner ? o.number : 0;
+  const out = new Set(o ? o.skipped.map(s => s.n) : []);
+  let html = '';
+  for(let b=0; b<6; b++){
+    const rb = Math.floor(b/2), cb = b%2; let cells='';
+    for(let r=0;r<3;r++) for(let c=0;c<5;c++){
+      const n = rb*30 + r*10 + cb*5 + c + 1; const t = ticketOf(lot, n);
+      const cls = ['cell']; if(t){ cls.push('sold'); if(!t.paid) cls.push('unpaid'); } if(n === win) cls.push('win'); if(out.has(n)) cls.push('out');
+      const lab = t ? `Biglietto ${n}: ${t.name}${t.paid ? '' : ', da pagare'}` : `Biglietto ${n}: libero`;
+      cells += `<button class="${cls.join(' ')}" data-act="cell" data-n="${n}" aria-label="${esc(lab)}">${n}</button>`;
+    }
+    html += `<div class="cartella">${cells}</div>`;
+  }
+  return `<div class="legend"><span><i class="lg-free"></i>Libero</span><span><i class="lg-sold"></i>Ceduto</span><span><i class="lg-unpaid"></i>Da pagare</span></div>
+    <div class="tabellone" role="group" aria-label="Tabellone dei biglietti da 1 a 90">${html}</div>
+    ${lot.result ? `<p class="hint">Estrazione registrata${win ? `: il biglietto vincente è il ${win}, in rosso` : ''}. Per cedere altri biglietti cancella prima l'estrazione.</p>` :
+      `<div class="board-tools"><button class="btn ghost small" data-act="rand">${I.dice} Biglietto a caso</button></div>
+       <p class="hint">Tocca un numero libero per cedere quel biglietto. Tocca un numero ceduto per rimandarlo o modificarlo.</p>`}`;
+}
+function listHtml(lot){
+  if(!lot.tickets.length) return `<div class="empty"><h2>Nessun biglietto ceduto</h2><p>Vai al tabellone e tocca un numero: scrivi a chi lo dai e gli mandi il biglietto con un link.</p><a class="btn primary" href="#/l/${lot.id}/tabellone">Apri il tabellone</a></div>`;
+  const o = lot.result ? outcome(lot) : null;
+  const q = ui.q.trim().toLowerCase();
+  const list = byNum(lot).filter(t => !q || t.name.toLowerCase().includes(q) || String(t.n) === q || t.code.toLowerCase() === q);
+  const unpaid = lot.tickets.filter(t => !t.paid).length;
+  return `<input class="search" type="search" data-input="search" value="${esc(ui.q)}" placeholder="Cerca per nome, numero o codice" aria-label="Cerca biglietto">
+    <div class="list-tools"><span>${unpaid ? (unpaid === 1 ? '1 biglietto da pagare' : unpaid + ' biglietti da pagare') : 'Tutti i biglietti sono pagati'}</span><button class="link-btn" data-act="csv">Esporta elenco</button></div>
+    <ul class="people">${list.map(t => `<li class="person">
+      <button class="person-main tk-line" data-act="ticket" data-n="${t.n}"><span class="tok sm ${o && o.winner && o.number === t.n ? 'red' : ''}">${t.n}</span><span class="person-name">${esc(t.name)}</span></button>
+      <button class="paid-tag ${t.paid ? '' : 'no'}" data-act="toggle-paid" data-n="${t.n}" aria-label="Biglietto ${t.n}: ${t.paid ? 'pagato, tocca per segnare da pagare' : 'da pagare, tocca per segnare pagato'}">${t.paid ? 'Pagato' : 'Da pagare'}</button>
+      <button class="icon-btn" data-act="share-menu" data-n="${t.n}" aria-label="Invia il biglietto ${t.n} a ${esc(t.name)}">${I.share}</button></li>`).join('') ||
+      '<li class="person"><span class="muted">Nessun risultato.</span></li>'}</ul>`;
+}
+function drawHtml(lot){
+  const ex = (lot.result && lot.result.extracted) || [];
+  const cd = countdown(lot.drawDate, lot.drawTime);
+  const live = lot.wheel === 'live';
+  const o = lot.result ? outcome(lot) : null;
+  const last = lot.rule === 'next' ? 5 : lot.pos;
+  let inputs = '';
+  for(let k=lot.pos;k<=last;k++) inputs += `<div><label for="ex${k}">${ord(k)}</label><input id="ex${k}" name="ex" data-pos="${k}" type="number" inputmode="numeric" min="1" max="90" placeholder=" " value="${ex[k-1] || ''}"></div>`;
+  let res = '';
+  if(o){
+    const skip = o.skipped.length ? `<p class="note">${o.skipped.map(s => `Il ${s.n} (${ord(s.pos)} estratto) non era stato ceduto.`).join(' ')}</p>` : '';
+    if(o.winner){
+      res = `<section class="panel"><div class="winner big"><span class="tok xl red">${o.number}</span><div><h2>Vince il biglietto ${o.number}</h2><p><strong>${esc(o.winner.name)}</strong>${o.winner.paid ? '' : ', <span style="color:var(--red)">biglietto da pagare</span>'}</p><p class="muted">${ord(o.from)} estratto${live ? '' : ', ' + wheelName(lot.wheel)}</p>${skip}</div></div>
+        <div class="btn-row"><button class="btn wa" data-act="notify">${I.wa} Avvisa ${esc(firstName(o.winner.name))}</button></div>
+        <label class="check"><input type="checkbox" data-input="names" ${ui.nameInResult ? 'checked' : ''}> Mostra il nome del vincitore nel link</label>
+        <div class="btn-row"><button class="btn primary" data-act="share-result">${I.share} Condividi</button><button class="btn ghost" data-act="wa-result">${I.wa} Su WhatsApp</button></div></section>`;
+    } else if(o.pending){
+      res = `<section class="panel"><div class="notice"><div><p><strong>Il ${o.skipped.map(s => s.n).join(', il ')} non era stato ceduto.</strong></p><p>Scrivi il ${ord(o.nextPos)} estratto per trovare il vincitore.</p></div></div></section>`;
+    } else {
+      res = `<section class="panel"><div class="winner big"><span class="tok xl empty">–</span><div><h2>Nessun vincitore</h2>${skip}<p>${lot.rule === 'none' ? "Il premio resta all'organizzatore." : 'Nessuno dei cinque estratti era stato ceduto: decidi tu come procedere.'}</p></div></div>
+        <div class="btn-row"><button class="btn primary" data-act="share-result">${I.share} Condividi l'esito</button></div></section>`;
+    }
+  }
+  return `<section class="panel"><h2>${live ? 'Estrazione dal vivo' : 'Numero vincente'}</h2>
+    <p>${esc(fmtDate(lot.drawDate))}, ore ${esc(lot.drawTime||'20:00')}. ${live ? `Estrai un numero dal sacchetto, o fatti aiutare dall'app, e scrivilo qui.` : `Dopo le 20 scrivi il <strong>${ord(lot.pos)} estratto della ${esc(wheelName(lot.wheel))}</strong>.`}${lot.rule === 'next' && lot.pos < 5 ? ` Gli estratti successivi servono solo se quel numero non è stato ceduto.` : ''}</p>
+    ${cd ? `<p class="muted">${cd}.</p>` : ''}
+    ${live ? '' : `<a class="btn ghost small" href="${OFFICIAL_URL}" target="_blank" rel="noopener">Vedi le ultime estrazioni del Lotto</a>`}
+    <form data-form="draw" novalidate><div class="ex-grid">${inputs}</div>
+    <p class="err" id="d-err" role="alert"></p>
+    <div class="btn-row">${live ? `<button type="button" class="btn ghost" data-act="live-draw">${I.dice} Estrai un numero</button>` : ''}<button class="btn primary">${lot.result ? 'Aggiorna' : 'Trova il vincitore'}</button></div>
+    ${lot.result ? `<button type="button" class="link-btn" data-act="clear-draw">Cancella l'estrazione</button>` : ''}</form></section>${res}`;
+}
+
+/* ---------- Vista: biglietto (partecipante) ---------- */
+function viewTicket(seg){
+  const p = decodeTicket(seg);
+  if(!p) return errorPage('Biglietto non leggibile', "Il link sembra incompleto. Chiedi all'organizzatore di rimandartelo, oppure copialo per intero dal messaggio.");
+  document.body.className = 'th-' + p.th;
+  document.title = `Biglietto ${p.n}, ${p.l}`;
+  const cd = countdown(p.d, p.tm);
+  const mine = getLot(p.i);
+  return `<div class="tk-page"><article class="ticket" aria-label="Biglietto numero ${p.n}">
+    <header class="tk-head">${ORN[p.th]}<h1>${esc(p.l)}</h1>${p.o ? `<p>Organizzata da ${esc(p.o)}${p.k ? ', ' + esc(p.k) : ''}</p>` : ''}</header>
+    <div class="tk-body">
+      <div class="tk-hero"><span class="tok xl" aria-hidden="true">${p.n}</span><div><p class="lbl">Biglietto intestato a</p><p class="who">${esc(p.h)}</p>${p.q ? `<p class="lbl">Prezzo ${euro(p.q)}</p>` : ''}</div></div>
+      <dl class="facts">
+        ${p.z ? `<div><dt>Premio</dt><dd>${esc(p.z)}</dd></div>` : ''}
+        <div><dt>Estrazione</dt><dd>${esc(fmtDate(p.d))}, ore ${esc(p.tm || '20:00')}</dd></div>
+        <div><dt>Vinci se</dt><dd>${esc(winPhrase(p.n, p.ps, p.w))}</dd></div>
+      </dl>
+      <p class="rule">${RULES[p.r]}</p>
+      ${p.x ? `<p class="notes">${esc(p.x)}</p>` : ''}
+    </div>
+    <div class="tk-perf" aria-hidden="true"></div>
+    <div class="tk-stub"><span class="tk-num">N. ${p.n}</span><span><span class="lbl">Codice </span><span class="tk-code">${esc(p.c)}</span></span></div>
+  </article>
+  <div class="tk-after">
+    ${cd ? `<p class="tk-count">${cd}</p>` : ''}
+    <button class="btn primary block" data-act="share-self">${I.share} Salva o condividi il biglietto</button>
+    ${p.w !== 'live' ? `<a class="btn ghost block" href="${OFFICIAL_URL}" target="_blank" rel="noopener">Vedi le ultime estrazioni del Lotto</a>` : ''}
+    <p class="tk-foot">Questo link è il tuo biglietto: conservalo. L'organizzatore può verificarlo con il codice.</p>
+    ${mine ? `<a class="tk-admin" href="#/l/${esc(p.i)}/biglietti">Torna alla gestione</a>` : ''}
+  </div></div>`;
+}
+function viewResult(seg){
+  const p = decodeResult(seg);
+  if(!p) return errorPage('Esito non leggibile', "Il link sembra incompleto. Chiedi all'organizzatore di rimandartelo.");
+  document.body.className = 'th-' + p.th;
+  document.title = 'Esito ' + p.l;
+  const live = p.w === 'live';
+  const ex = p.e.map((n,i) => n ? `<figure><span class="tok ${n === p.n ? 'red' : ''}">${n}</span><figcaption>${ord(i+1)}</figcaption></figure>` : '').join('');
+  return `<div class="tk-page"><article class="ticket">
+    <header class="tk-head">${ORN[p.th]}<h1>${esc(p.l)}</h1><p>Estrazione del ${esc(fmtShort(p.d))}</p></header>
+    <div class="tk-body">
+      ${p.n ? `<div class="tk-hero"><span class="tok xl red">${p.n}</span><div><p class="lbl">Biglietto vincente</p><p class="who">${p.h ? esc(p.h) : 'Numero ' + p.n}</p>${p.z ? `<p class="lbl">Vince: ${esc(p.z)}</p>` : ''}</div></div>`
+        : `<div class="tk-hero"><span class="tok xl empty">–</span><div><p class="who">Nessun vincitore</p><p class="lbl">Il numero estratto non era stato ceduto.</p></div></div>`}
+      <p class="muted" style="margin:0">${live ? 'Numeri estratti dal vivo' : 'Numeri estratti sulla ' + esc(wheelName(p.w))}</p>
+      <div class="res-ex">${ex}</div>
+    </div></article>
+    <div class="tk-after"><p class="tk-foot">Se hai il biglietto ${p.n || 'vincente'}, contatta ${p.o ? esc(p.o) : "l'organizzatore"}.</p></div></div>`;
+}
+function errorPage(title, text){
+  return topBar(title, {back:'#/'}) + `<main class="wrap"><div class="empty"><h2>${esc(title)}</h2><p>${esc(text)}</p><a class="btn primary" href="#/">Vai alla home</a></div></main>`;
+}
+
+/* ---------- Vista: verifica ---------- */
+function viewVerify(){
+  return topBar('Verifica un biglietto', {back:'#/'}) + `<main class="wrap">
+    <p class="intro">Incolla il link del biglietto che ti mostrano, o scrivi il codice. Controllo che corrisponda a quanto registrato su questo telefono.</p>
+    <form data-form="verify"><label class="f" for="v-in">Link o codice</label>
+    <textarea class="field" id="v-in" name="v" placeholder="https://…/#/t/… oppure K7P2QX"></textarea>
+    <div class="btn-row"><button class="btn primary">Verifica</button></div></form>
+    <div id="v-out" aria-live="polite"></div></main>`;
+}
+function verify(input){
+  const s = input.trim(); if(!s) return '<p class="err">Incolla un link o scrivi un codice.</p>';
+  const m = /#\/t\/([A-Za-z0-9_-]+)/.exec(s);
+  const box = (ok, title, text) => `<div class="notice ${ok ? 'ok' : 'ko'}" style="margin-top:18px"><div><p><strong>${title}</strong></p><p>${text}</p></div></div>`;
+  const desc = (lot, t) => `Biglietto ${t.n} di ${esc(t.name)}, «${esc(lot.name)}». ${t.paid ? 'Pagato.' : 'Da pagare.'}`;
+  if(m){
+    const p = decodeTicket(m[1]); if(!p) return box(false, 'Link non valido', 'Il link è incompleto o modificato.');
+    const lot = getLot(p.i); if(!lot) return box(false, 'Estrazione non trovata', `Il biglietto è di «${esc(p.l)}», che non è salvata su questo telefono.`);
+    const t = lot.tickets.find(x => x.code === p.c);
+    if(!t) return box(false, 'Biglietto non registrato', `Il codice ${esc(p.c)} non esiste in «${esc(lot.name)}». Forse il biglietto è stato annullato.`);
+    if(ticketSig(lot, {code:p.c, n:p.n, name:p.h}) !== p.s) return box(false, 'Biglietto alterato', `I dati del link non corrispondono alla firma. Con questo codice risulta il biglietto ${t.n} di ${esc(t.name)}.`);
+    if(t.n !== p.n || t.name.trim() !== p.h.trim()) return box(false, 'Biglietto non aggiornato', `Il link è autentico ma superato. Ora risulta: ${desc(lot, t)}`);
+    return box(true, 'Biglietto valido', desc(lot, t));
+  }
+  const code = s.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  for(const lot of state.lotteries){ const t = lot.tickets.find(x => x.code === code); if(t) return box(true, 'Codice trovato', desc(lot, t)); }
+  return box(false, 'Codice non trovato', 'Nessun biglietto con questo codice nelle estrazioni salvate su questo telefono.');
+}
+
+/* ---------- Fogli (bottom sheet) ---------- */
+function openSheet(html, label){
+  const root = $('#sheet-root');
+  root.innerHTML = `<div class="sheet-back" data-act="sheet-back"><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(label||'')}"><div class="sheet-in"><div class="sheet-grip"></div>
+    <button class="icon-btn x" data-act="sheet-close" aria-label="Chiudi">${I.close}</button>${html}</div></div></div>`;
+  const sh = $('.sheet', root); sh.tabIndex = -1;
+  setTimeout(() => ($('[data-autofocus]', root) || sh).focus({preventScroll:true}), 30);
+}
+function closeSheet(){ $('#sheet-root').innerHTML = ''; }
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && $('#sheet-root').innerHTML) closeSheet(); });
+
+function sheetHomeMenu(){
+  openSheet(`<h2>Altre azioni</h2><ul class="menu-list">
+    <li><a href="#/verifica">${I.shield}<span>Verifica un biglietto<small>Controlla link o codice di un partecipante</small></span></a></li>
+    <li><button data-act="export">${I.down}<span>Scarica il backup<small>Un file con tutte le estrazioni e i biglietti</small></span></button></li>
+    <li><button data-act="import">${I.up}<span>Ripristina da backup<small>Carica un file di backup scaricato prima</small></span></button></li>
+    <li><button data-act="about">${I.help}<span>Come funziona</span></button></li></ul>`, 'Altre azioni');
+}
+function sheetAbout(){
+  openSheet(`<h2>Come funziona</h2>
+    <p>Crei un'estrazione con il suo premio e scegli quale numero del Lotto decide il vincitore, per esempio il 1° estratto sulla ruota di Napoli.</p>
+    <p>I biglietti sono i numeri da 1 a 90: ognuno si cede a una persona sola. Chi compra tre biglietti ha tre numeri, quindi tre possibilità. Ogni biglietto è un link da mandare su WhatsApp.</p>
+    <p>Dopo l'estrazione scrivi il numero uscito: vince il biglietto con quel numero.</p>
+    <p>I dati restano su questo telefono, non su un server: scarica un backup dal menu ogni tanto. Il link del biglietto contiene una firma: con «Verifica un biglietto» capisci se qualcuno l'ha modificato.</p>
+    <p class="help">Per installare l'app su Android: menu del browser, poi «Installa app» o «Aggiungi a schermata Home».</p>`, 'Come funziona');
+}
+function sheetLotMenu(lot){
+  openSheet(`<h2>${esc(lot.name)}</h2><ul class="menu-list">
+    <li><a href="#/modifica/${lot.id}">${I.edit}<span>Modifica l'estrazione<small>Premio, data, ruota, prezzo</small></span></a></li>
+    <li><button data-act="csv">${I.table}<span>Esporta l'elenco<small>File per Excel con numeri, nomi e pagamenti</small></span></button></li>
+    <li><button data-act="duplicate">${I.dup}<span>Duplica per la prossima volta<small>Stesse impostazioni, tabellone vuoto</small></span></button></li>
+    <li><button data-act="delete-lot" class="danger">${I.trash}<span>Elimina l'estrazione</span></button></li></ul>`, 'Azioni estrazione');
+}
+function namesDatalist(lot){
+  const seen = new Map(); lot.tickets.forEach(t => { const k = t.name.trim().toLowerCase(); if(!seen.has(k)) seen.set(k, t.name.trim()); });
+  return `<datalist id="names">${[...seen.values()].sort((a,b) => a.localeCompare(b,'it')).map(n => `<option value="${esc(n)}">`).join('')}</datalist>`;
+}
+function sheetSell(lot, n){
+  ui.n = n;
+  openSheet(`<div class="sheet-hero"><span class="tok">${n}</span><div><h2>Biglietto n. ${n}</h2><p class="sub">${lot.price ? euro(lot.price) : 'Gratuito'}</p></div></div>
+    <form data-form="sell" novalidate>
+      <label class="f" for="a-name">A chi lo cedi</label><input class="field" id="a-name" name="name" maxlength="60" autocomplete="off" list="names" placeholder="Nome e cognome" data-autofocus data-input="aname">${namesDatalist(lot)}
+      <label class="f" for="a-phone">Telefono (facoltativo)</label><input class="field" id="a-phone" name="phone" type="tel" maxlength="20" placeholder="Per mandargli il biglietto su WhatsApp">
+      <label class="check"><input type="checkbox" name="paid" ${lot.price ? '' : 'checked'}> Ha già pagato</label>
+      <p class="err" id="a-err" role="alert"></p>
+      <div class="form-actions"><button class="btn red">Cedi il biglietto ${n}</button></div></form>`, 'Cedi biglietto');
+}
+function sheetShare(lot, t, fresh){
+  ui.n = t.n;
+  const others = lot.tickets.filter(x => sameName(x.name, t.name));
+  openSheet(`<div class="sheet-hero"><span class="tok ${t.paid ? '' : 'unpaid-tok'}">${t.n}</span><div><h2>${fresh ? 'Biglietto ' + t.n + ' ceduto' : esc(t.name)}</h2><p class="sub">${fresh ? esc(t.name) + ', ' : ''}codice ${esc(t.code)}${t.paid ? '' : ', da pagare'}</p></div></div>
+    <div class="stack">
+      <button class="btn wa block" data-act="send-wa">${I.wa} Invia su WhatsApp</button>
+      ${others.length > 1 ? `<button class="btn ghost block" data-act="send-all">${I.wa} Invia tutti i ${others.length} biglietti di ${esc(firstName(t.name))}</button>` : ''}
+      <button class="btn primary block" data-act="send-share">${I.share} Condividi con un'altra app</button>
+      <button class="btn ghost block" data-act="send-copy">${I.copy} Copia il link</button>
+      <a class="btn ghost block" href="${esc(ticketLink(lot, t))}">${I.eye} Guarda il biglietto</a>
+    </div>
+    <div class="btn-row"><button class="btn ghost small" data-act="ticket" data-n="${t.n}">${I.edit} Modifica</button>${t.paid ? '' : `<button class="btn ghost small" data-act="mark-paid">Segna pagato</button>`}</div>`, 'Invia biglietto');
+}
+function sheetTicket(lot, t){
+  ui.n = t.n;
+  openSheet(`<div class="sheet-hero"><span class="tok">${t.n}</span><div><h2>Biglietto n. ${t.n}</h2><p class="sub">Codice ${esc(t.code)}</p></div></div>
+    <form data-form="ticket" novalidate>
+      <label class="f" for="p-name">Intestato a</label><input class="field" id="p-name" name="name" value="${esc(t.name)}" maxlength="60" list="names">${namesDatalist(lot)}
+      <label class="f" for="p-phone">Telefono</label><input class="field" id="p-phone" name="phone" type="tel" value="${esc(t.phone||'')}" maxlength="20">
+      <label class="check"><input type="checkbox" name="paid" ${t.paid ? 'checked' : ''}> Ha pagato</label>
+      <label class="f" for="p-note">Nota (solo per te)</label><input class="field" id="p-note" name="note" value="${esc(t.note||'')}" maxlength="120">
+      <p class="err" id="p-err" role="alert"></p>
+      <div class="btn-row"><button type="button" class="btn ghost small" data-act="share-menu" data-n="${t.n}">${I.share} Invia biglietto</button>${lot.result ? '' : `<button type="button" class="btn danger small" data-act="free-num">${I.trash} Annulla il biglietto</button>`}</div>
+      <div class="form-actions"><button class="btn primary">Salva</button></div>
+    </form>`, 'Biglietto');
+}
+
+/* ---------- Backup ---------- */
+function download(name, content, type){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content], {type})); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+function exportBackup(){
+  const d = new Date().toISOString().slice(0,10);
+  download(`lotteria-backup-${d}.json`, JSON.stringify({app:'lotteria-cesti', v:2, exportedAt:new Date().toISOString(), lotteries:state.lotteries}, null, 1), 'application/json');
+  state.lastBackup = Date.now(); try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){}
+  closeSheet(); toast('Backup scaricato'); if(!location.hash || location.hash === '#/') rerender();
+}
+function importBackup(){
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'application/json,.json';
+  inp.onchange = async () => {
+    try{
+      const data = JSON.parse(await inp.files[0].text());
+      if(!data || data.app !== 'lotteria-cesti' || data.v !== 2 || !Array.isArray(data.lotteries)) throw 0;
+      const valid = data.lotteries.filter(l => l && l.id && l.secret && Array.isArray(l.tickets));
+      const clash = valid.filter(l => getLot(l.id)).length;
+      if(clash && !confirm(`${clash === 1 ? "1 estrazione è già presente" : clash + ' estrazioni sono già presenti'} su questo telefono. Sostituirle con la versione del backup?`)) return;
+      valid.forEach(l => { const i = state.lotteries.findIndex(x => x.id === l.id); if(i >= 0) state.lotteries[i] = l; else state.lotteries.push(l); });
+      save(); closeSheet(); toast(valid.length === 1 ? '1 estrazione ripristinata' : valid.length + ' estrazioni ripristinate'); rerender();
+    }catch(e){ toast('Il file non è un backup di questa app.'); }
+  };
+  inp.click();
+}
+function exportCsv(lot){
+  const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const rows = [['Numero','Intestato a','Telefono','Pagato','Codice','Nota']];
+  byNum(lot).forEach(t => rows.push([t.n, t.name, t.phone||'', t.paid ? 'sì' : 'no', t.code, t.note||'']));
+  const slug = lot.name.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'estrazione';
+  download(`${slug}-biglietti.csv`, '﻿' + rows.map(r => r.map(q).join(';')).join('\r\n'), 'text/csv');
+  closeSheet();
+}
+
+/* ---------- Azioni ---------- */
+const curLot = () => getLot(ui.lotId);
+const curTicket = () => ticketOf(curLot(), ui.n);
+const actions = {
+  'home-menu': () => sheetHomeMenu(),
+  'lot-menu': () => sheetLotMenu(curLot()),
+  'about': () => sheetAbout(),
+  'export': () => exportBackup(),
+  'import': () => importBackup(),
+  'csv': () => exportCsv(curLot()),
+  'sheet-close': () => closeSheet(),
+  'sheet-back': (el, e) => { if(e.target === el) closeSheet(); },
+  'cell': el => {
+    const lot = curLot(), n = +el.dataset.n, t = ticketOf(lot, n);
+    if(t){ sheetShare(lot, t); return; }
+    if(lot.result){ toast("Estrazione già registrata: cancellala per cedere altri biglietti."); return; }
+    sheetSell(lot, n);
+  },
+  'rand': () => {
+    const lot = curLot(); const free = []; for(let n=1;n<=90;n++) if(!ticketOf(lot, n)) free.push(n);
+    if(!free.length){ toast('Tutti i 90 biglietti sono già ceduti.'); return; }
+    const n = free[randInt(free.length)];
+    const el = $(`.cell[data-n="${n}"]`); if(el){ el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
+    sheetSell(lot, n);
+  },
+  'ticket': el => sheetTicket(curLot(), ticketOf(curLot(), +el.dataset.n)),
+  'toggle-paid': el => { const t = ticketOf(curLot(), +el.dataset.n); t.paid = !t.paid; save(); rerender(); toast(`Biglietto ${t.n}: ${t.paid ? 'pagato' : 'da pagare'}`); },
+  'mark-paid': () => { const lot = curLot(), t = curTicket(); t.paid = true; save(); rerender(); sheetShare(lot, t); toast(`Biglietto ${t.n}: pagato`); },
+  'share-menu': el => { const lot = curLot(); sheetShare(lot, ticketOf(lot, +el.dataset.n)); },
+  'send-wa': () => { const lot = curLot(), t = curTicket(); openWhatsApp(t.phone, ticketMessage(lot, t) + '\n' + ticketLink(lot, t)); },
+  'send-all': () => { const lot = curLot(), t = curTicket(); const list = byNum(lot).filter(x => sameName(x.name, t.name)); openWhatsApp(t.phone || (list.find(x => x.phone) || {}).phone, bundleMessage(lot, list)); },
+  'send-share': () => { const lot = curLot(), t = curTicket(); shareAny(`Biglietto ${t.n}, ${lot.name}`, ticketMessage(lot, t), ticketLink(lot, t)); },
+  'send-copy': async () => { const lot = curLot(), t = curTicket(); toast(await copyText(ticketLink(lot, t)) ? 'Link copiato' : 'Copia non riuscita'); },
+  'share-self': () => shareAny(document.title, 'Il mio biglietto', location.href),
+  'free-num': () => {
+    const lot = curLot(), t = curTicket();
+    if(!confirm(`Annullare il biglietto ${t.n} di ${t.name}? Il numero torna libero e il suo link non sarà più valido.`)) return;
+    lot.tickets = lot.tickets.filter(x => x.n !== t.n); save(); closeSheet(); rerender(); toast(`Biglietto ${t.n} annullato`);
+  },
+  'live-draw': () => {
+    const inputs = [...document.querySelectorAll('[name=ex]')];
+    const used = new Set(inputs.map(i => parseInt(i.value)).filter(Boolean));
+    const slot = inputs.find(i => !i.value); if(!slot){ toast('Non servono altri numeri.'); return; }
+    const pool = []; for(let n=1;n<=90;n++) if(!used.has(n)) pool.push(n);
+    const n = pool[randInt(pool.length)]; slot.value = n;
+    slot.classList.remove('pop'); void slot.offsetWidth; slot.classList.add('pop'); toast('Estratto il ' + n);
+  },
+  'clear-draw': () => { if(!confirm("Cancellare il numero estratto e il vincitore?")) return; curLot().result = null; save(); rerender(); },
+  'notify': () => { const lot = curLot(), o = outcome(lot); if(o.winner) openWhatsApp(o.winner.phone, winnerMessage(lot, o)); },
+  'share-result': () => { const lot = curLot(); shareAny('Esito ' + lot.name, resultMessage(lot), resultLink(lot, ui.nameInResult)); },
+  'wa-result': () => { const lot = curLot(); openWhatsApp('', resultMessage(lot) + '\n' + resultLink(lot, ui.nameInResult)); },
+  'duplicate': () => {
+    const lot = curLot();
+    const copy = {...JSON.parse(JSON.stringify(lot)), id:rid(8), secret:rid(24), name:lot.name + ' (copia)', tickets:[], result:null, drawDate:'', createdAt:Date.now()};
+    state.lotteries.push(copy); save(); closeSheet(); location.hash = '#/modifica/' + copy.id; toast('Estrazione duplicata: scegli la nuova data');
+  },
+  'delete-lot': () => {
+    const lot = curLot();
+    if(!confirm(`Eliminare «${lot.name}» con tutti i biglietti? Non si può annullare.`)) return;
+    state.lotteries = state.lotteries.filter(l => l.id !== lot.id); save(); closeSheet(); location.hash = '#/'; toast('Estrazione eliminata');
+  }
+};
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]'); if(!el) return;
+  const fn = actions[el.dataset.act]; if(fn) fn(el, e);
+});
+document.addEventListener('input', e => {
+  const k = e.target.dataset && e.target.dataset.input; if(!k) return;
+  if(k === 'search'){ ui.q = e.target.value; const pos = e.target.selectionStart; rerender(); const s = $('.search'); if(s){ s.focus(); try{ s.setSelectionRange(pos,pos); }catch(_){} } }
+  if(k === 'names') ui.nameInResult = e.target.checked;
+  if(k === 'aname'){ // stesso partecipante di un altro biglietto: ripropone il telefono
+    const t = curLot().tickets.find(x => sameName(x.name, e.target.value) && x.phone); const ph = $('#a-phone');
+    if(t && ph && !ph.value) ph.value = t.phone;
+  }
+});
+
+/* ---------- Form ---------- */
+const forms = {
+  lottery(f){
+    const err = $('#f-err'), d = Object.fromEntries(new FormData(f));
+    if(!d.name.trim()){ err.textContent = "Dai un nome all'estrazione."; f.elements['name'].focus(); return; }
+    if(!d.prize.trim()){ err.textContent = 'Scrivi qual è il premio.'; f.elements['prize'].focus(); return; }
+    if(!d.drawDate){ err.textContent = "Scegli la data dell'estrazione."; f.elements['drawDate'].focus(); return; }
+    if(d.wheel !== 'live' && !isDrawDay(d.drawDate) && !confirm(`${fmtDate(d.drawDate)} non c'è estrazione del Lotto (si estrae martedì, giovedì, venerdì e sabato). Salvare lo stesso?`)) return;
+    const data = {name:d.name.trim(), prize:d.prize.trim(), theme:d.theme||'altro', drawDate:d.drawDate, drawTime:d.drawTime||'20:00', wheel:d.wheel, pos:okPos(d.pos),
+      rule:d.rule === 'none' ? 'none' : 'next', price:parsePrice(d.price), organizer:d.organizer.trim(), contact:d.contact.trim(), notes:d.notes.trim()};
+    let lot = getLot(f.dataset.id);
+    if(lot){ Object.assign(lot, data); if(lot.result) lot.result = {...lot.result}; }
+    else { lot = {id:rid(8), secret:rid(24), tickets:[], result:null, createdAt:Date.now(), ...data}; state.lotteries.push(lot); }
+    save(); location.hash = '#/l/' + lot.id; toast(f.dataset.id ? 'Modifiche salvate' : 'Estrazione creata: cedi il primo biglietto');
+  },
+  sell(f){
+    const lot = curLot(), n = ui.n, err = $('#a-err'), d = Object.fromEntries(new FormData(f));
+    if(ticketOf(lot, n)){ err.textContent = `Il biglietto ${n} è già stato ceduto.`; return; }
+    let name = (d.name||'').trim(); if(!name){ err.textContent = 'Scrivi a chi cedi il biglietto.'; $('#a-name').focus(); return; }
+    const same = lot.tickets.find(x => sameName(x.name, name)); if(same) name = same.name;
+    let code; do{ code = rid(6); }while(state.lotteries.some(l => l.tickets.some(x => x.code === code)));
+    const t = {n, code, name, phone:(d.phone||'').trim(), paid:!!f.paid.checked, note:'', createdAt:Date.now()};
+    lot.tickets.push(t); save(); rerender(); sheetShare(lot, t, true);
+  },
+  ticket(f){
+    const lot = curLot(), t = curTicket(), err = $('#p-err'), d = Object.fromEntries(new FormData(f));
+    const name = d.name.trim(); if(!name){ err.textContent = 'Il nome non può essere vuoto.'; return; }
+    const changed = name !== t.name;
+    Object.assign(t, {name, phone:d.phone.trim(), paid:!!f.paid.checked, note:d.note.trim()});
+    save(); closeSheet(); rerender();
+    if(changed){ sheetShare(lot, t); toast('Nome cambiato: rimanda il biglietto'); } else toast('Salvato');
+  },
+  draw(f){
+    const lot = curLot(), err = $('#d-err');
+    const ex = [null,null,null,null,null];
+    for(const i of f.querySelectorAll('[name=ex]')){
+      const v = i.value.trim(); if(v === '') continue;
+      const n = parseInt(v); if(!(n >= 1 && n <= 90)){ err.textContent = 'Ogni numero deve essere tra 1 e 90.'; return; }
+      ex[+i.dataset.pos - 1] = n;
+    }
+    if(!ex[lot.pos-1]){ err.textContent = `Scrivi il ${ord(lot.pos)} estratto.`; return; }
+    const filled = ex.filter(Boolean);
+    if(new Set(filled).size !== filled.length){ err.textContent = 'Sulla stessa ruota un numero esce una volta sola: controlla i doppioni.'; return; }
+    lot.result = {extracted: ex, at: Date.now()}; save(); rerender();
+    const r = $('.winner, .notice', app); if(r) r.scrollIntoView({behavior:'smooth', block:'center'});
+  },
+  verify(f){ $('#v-out').innerHTML = verify(f.v.value); }
+};
+document.addEventListener('submit', e => { const h = forms[e.target.dataset.form]; if(h){ e.preventDefault(); h(e.target); } });
+
+/* ---------- Avvio ---------- */
+route();
+if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+</script>
+</body>
+</html>
