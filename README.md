@@ -13,7 +13,8 @@ Funziona in due modi:
 
 ```
 index.html              pagina che carica stile e script
-css/app.css             stile
+css/app.css             stile (tema chiaro e scuro)
+fonts/                  carattere Barlow Condensed (licenza OFL)
 js/app.js               avvio, router, azioni dei pulsanti, form
 js/views.js             viste: funzioni che restituiscono l'HTML delle pagine
 js/domain.js            regole del gioco: vincitore, firma dei biglietti, link, messaggi
@@ -22,6 +23,7 @@ js/store-firebase.js    repository Firebase (login Google + Firestore)
 js/state.js             stato condiviso dell'interfaccia
 js/util.js              funzioni di supporto (date, testo, condivisione)
 js/crypto.js            SHA-256 / HMAC per firmare i biglietti
+js/ticket-image.js      disegna il biglietto come immagine PNG
 js/icons.js             icone SVG
 js/config.js            configurazione Firebase
 firestore.rules         regole di sicurezza da incollare nella console Firebase

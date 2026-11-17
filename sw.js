@@ -1,9 +1,10 @@
 // Service worker: l'app funziona anche offline.
 // Cambia VERSION quando pubblichi una nuova versione dei file.
-const VERSION = 'lotteria-v5';
+const VERSION = 'lotteria-v6';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './css/app.css',
   './js/app.js', './js/config.js', './js/util.js', './js/crypto.js', './js/domain.js', './js/icons.js',
-  './js/state.js', './js/views.js', './js/store-local.js', './js/store-firebase.js',
+  './js/state.js', './js/views.js', './js/store-local.js', './js/store-firebase.js', './js/ticket-image.js',
+  './fonts/barlow-condensed-latin-600-normal.woff2', './fonts/barlow-condensed-latin-700-normal.woff2',
   './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png'];
 const FIREBASE_SDK = 'https://www.gstatic.com/firebasejs/';
 

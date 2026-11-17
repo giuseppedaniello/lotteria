@@ -1,7 +1,7 @@
 // Viste: funzioni che ricevono i dati e restituiscono l'HTML di una pagina.
 // Non modificano dati: le azioni dell'utente sono gestite in app.js.
 
-import { esc, euro, ord, fmtDate, fmtShort, countdown, firstName } from './util.js';
+import { esc, euro, ord, parseD, fmtDate, fmtShort, countdown, firstName } from './util.js';
 import { I, LOGO, ORN } from './icons.js';
 import { WHEELS, THEMES, OFFICIAL_URL, wheelName, wheelLabel, winPhrase, ticketOf, byNum, lotStats, outcome,
   decodeTicket, decodeResult } from './domain.js';
@@ -24,7 +24,7 @@ export function viewStoreError(){
     <button class="btn primary" data-act="reload">Riprova</button></div></main>`;
 }
 export function viewLogin(){
-  return topBar('Lotteria dei cesti') + `<main class="wrap"><div class="empty"><h2>Accedi per gestire le estrazioni</h2>
+  return topBar('Lotteria dei cesti') + `<main class="wrap"><div class="empty"><div class="empty-art" aria-hidden="true"><span class="tok">7</span><span class="tok red">45</span><span class="tok">90</span></div><h2>Accedi per gestire le estrazioni</h2>
     <p>Le estrazioni e i biglietti sono salvati online e protetti dal tuo account Google: li ritrovi su ogni telefono o computer, anche se cambi dispositivo.</p>
     <button class="btn red" data-act="sign-in">Accedi con Google</button>
     <p class="err" id="login-err" role="alert"></p>
@@ -37,28 +37,42 @@ function ticksHtml(lot){
   for(let n = 1; n <= 90; n++){ const t = ticketOf(lot, n); s += `<i class="${t ? (t.paid ? 's' : 'u') : ''}"></i>`; }
   return `<div class="ticks" aria-hidden="true">${s}</div>`;
 }
+const daysTo = d => { const x = parseD(d); if(!x) return null; const t = new Date(); t.setHours(0,0,0,0); return Math.round((x - t) / 864e5); };
+function lotCard(l){
+  const st = lotStats(l), o = l.result ? outcome(l) : null, x = parseD(l.drawDate), dd = daysTo(l.drawDate);
+  let pill = '';
+  if(o && !o.pending) pill = `<span class="pill done">${o.winner ? 'Vinto dal ' + o.number : 'Nessun vincitore'}</span>`;
+  else if(dd === 0) pill = '<span class="pill soon">Oggi</span>';
+  else if(dd === 1) pill = '<span class="pill soon">Domani</span>';
+  else if(dd !== null && dd > 1 && dd <= 7) pill = `<span class="pill soon">Tra ${dd} giorni</span>`;
+  const date = x ? `<b>${x.getDate()}</b><span>${x.toLocaleDateString('it-IT', {month:'short'}).replace('.', '')}</span>` : '<b>?</b><span>data</span>';
+  return `<a class="lot-card th-${esc(l.theme)} ${isDone(l) ? 'past' : ''}" href="#/l/${l.id}">
+    <div class="lot-date ${x ? '' : 'none'}" aria-hidden="true">${date}</div>
+    <div class="lot-main"><div class="lot-top"><h2>${esc(l.name)}</h2>${pill}</div>
+      <p class="lot-meta">${esc(l.prize)}</p>
+      <p class="lot-meta">${esc(fmtDate(l.drawDate))}, ${ord(l.pos)} estratto, ${esc(wheelLabel(l.wheel))}</p>
+      ${ticksHtml(l)}
+      <div class="lot-foot"><span>${st.sold === 1 ? '1 biglietto' : st.sold + ' biglietti'} su 90</span><span>${euro(st.paid)} incassati</span></div></div></a>`;
+}
+const isDone = l => (l.result && !outcome(l).pending) || (daysTo(l.drawDate) ?? 0) < 0;
 export function viewHome(){
   const store = S.store;
-  const list = [...lots()].sort((a, b) => (b.drawDate || '').localeCompare(a.drawDate || ''));
+  const list = [...lots()];
   const needBackup = store.kind === 'local' && list.some(l => l.tickets.length) && store.lastChange > store.lastBackup && Date.now() - store.lastBackup > 3 * 864e5;
   let body;
   if(!store.loaded){
     body = `<p class="intro" role="status">Carico le tue estrazioni…</p>`;
   } else if(!list.length){
-    body = `<div class="empty"><h2>Nessuna estrazione, per ora</h2>
+    body = `<div class="empty"><div class="empty-art" aria-hidden="true"><span class="tok">7</span><span class="tok red">45</span><span class="tok">90</span></div>
+      <h2>Nessuna estrazione, per ora</h2>
       <p>Crea un'estrazione: scegli il premio, la data e la ruota del Lotto. Poi cedi i biglietti dal tabellone: ogni biglietto è un numero da 1 a 90 e vince chi ha il numero estratto.</p>
       <a class="btn red" href="#/nuova">Crea un'estrazione</a></div>`;
   } else {
+    const next = list.filter(l => !isDone(l)).sort((a, b) => (a.drawDate || '9').localeCompare(b.drawDate || '9'));
+    const past = list.filter(isDone).sort((a, b) => (b.drawDate || '').localeCompare(a.drawDate || ''));
     body = (needBackup ? `<div class="notice" role="note"><div><p>I dati sono salvati solo su questo telefono. Scarica un backup ogni tanto, così non perdi nulla se cambi telefono o cancelli i dati del browser.</p><button class="link-btn" data-act="export">Scarica il backup</button></div></div>` : '') +
-      list.map(l => {
-        const st = lotStats(l), o = l.result ? outcome(l) : null;
-        const status = o && !o.pending ? `<span class="pill done">${o.winner ? 'Vinto dal ' + o.number : 'Estratta'}</span>` : `<span class="pill ${l.theme}">${THEMES[l.theme] || ''}</span>`;
-        return `<a class="lot-row" href="#/l/${l.id}"><div class="lot-top"><h2>${esc(l.name)}</h2>${status}</div>
-          <p class="lot-meta">${esc(l.prize)}</p>
-          <p class="lot-meta">${esc(fmtDate(l.drawDate))}, ${ord(l.pos)} estratto, ${esc(wheelLabel(l.wheel))}</p>
-          ${ticksHtml(l)}
-          <div class="lot-foot"><span>${st.sold} biglietti su 90</span><span>${euro(st.paid)} incassati</span></div></a>`;
-      }).join('') +
+      (next.length ? `<div class="home-head"><h2>In programma</h2></div>${next.map(lotCard).join('')}` : '') +
+      (past.length ? `<div class="home-head"><h2>Concluse</h2></div>${past.map(lotCard).join('')}` : '') +
       `<a class="btn red fab" href="#/nuova">Nuova estrazione</a>`;
   }
   return topBar('Lotteria dei cesti', {menu:'home-menu'}) + `<main class="wrap">${body}</main>`;
@@ -215,7 +229,8 @@ export function viewTicket(seg){
   </article>
   <div class="tk-after">
     ${cd ? `<p class="tk-count">${cd}</p>` : ''}
-    <button class="btn primary block" data-act="share-self">${I.share} Salva o condividi il biglietto</button>
+    <button class="btn primary block" data-act="ticket-image">${I.down} Salva il biglietto come immagine</button>
+    <button class="btn ghost block" data-act="share-self">${I.share} Condividi il link</button>
     ${p.w !== 'live' ? `<a class="btn ghost block" href="${OFFICIAL_URL}" target="_blank" rel="noopener">Vedi le ultime estrazioni del Lotto</a>` : ''}
     <p class="tk-foot">Questo link è il tuo biglietto: conservalo. L'organizzatore può verificarlo con il codice.</p>
     ${mine ? `<a class="tk-admin" href="#/l/${esc(p.i)}/biglietti">Torna alla gestione</a>` : ''}

@@ -105,13 +105,27 @@ function openSheet(html, label){
   const sh = $('.sheet', root); sh.tabIndex = -1;
   setTimeout(() => ($('[data-autofocus]', root) || sh).focus({preventScroll: true}), 30);
 }
-function closeSheet(){ $('#sheet-root').innerHTML = ''; }
+function closeSheet(){
+  $('#sheet-root').innerHTML = '';
+  if(confirmResolve){ const r = confirmResolve; confirmResolve = null; r(false); }
+}
+/* Conferma in un foglio stilizzato (al posto di confirm() del browser) */
+let confirmResolve = null;
+function confirmSheet({title, text = '', ok = 'Conferma', cancel = 'Annulla', danger = false}){
+  return new Promise(resolve => {
+    closeSheet();
+    openSheet(`<h2>${esc(title)}</h2>${text ? `<p class="sub">${esc(text)}</p>` : ''}
+      <div class="confirm-actions"><button class="btn ghost" data-act="confirm-no">${esc(cancel)}</button><button class="btn ${danger ? 'danger-fill' : 'primary'}" data-act="confirm-yes">${esc(ok)}</button></div>`, title);
+    confirmResolve = resolve;
+  });
+}
+function answerConfirm(v){ const r = confirmResolve; confirmResolve = null; $('#sheet-root').innerHTML = ''; if(r) r(v); }
 document.addEventListener('keydown', e => { if(e.key === 'Escape' && $('#sheet-root').innerHTML) closeSheet(); });
 
 function sheetHomeMenu(){
   const s = S.store;
   const account = s.kind === 'firebase' && s.user
-    ? `<li><button data-act="sign-out">${I.logout}<span>Esci<small>Connesso come ${esc(s.user.name || s.user.email)}${s.user.name && s.user.email ? ' (' + esc(s.user.email) + ')' : ''}</small></span></button></li>` : '';
+    ? `<li class="menu-sep" role="separator"></li><li><button data-act="sign-out">${I.logout}<span>Esci<small>Connesso come ${esc(s.user.name || s.user.email)}${s.user.name && s.user.email ? ' (' + esc(s.user.email) + ')' : ''}</small></span></button></li>` : '';
   openSheet(`<h2>Altre azioni</h2>${s.kind === 'firebase' ? `<p class="sub">${I.cloud.replace('<svg', '<svg width="16" height="16" style="vertical-align:-3px"')} I dati sono salvati online sul tuo account.</p>` : ''}<ul class="menu-list">
     <li><a href="#/verifica">${I.shield}<span>Verifica un biglietto<small>Controlla link o codice di un partecipante</small></span></a></li>
     <li><button data-act="export">${I.down}<span>Scarica il backup<small>Un file con tutte le estrazioni e i biglietti</small></span></button></li>
@@ -152,14 +166,14 @@ function sheetShare(lot, t, fresh){
   ui.n = t.n; ui.ticket = t;
   const others = [...lot.tickets.filter(x => x.n !== t.n), t].filter(x => sameName(x.name, t.name));
   openSheet(`<div class="sheet-hero"><span class="tok ${t.paid ? '' : 'unpaid-tok'}">${t.n}</span><div><h2>${fresh ? 'Biglietto ' + t.n + ' ceduto' : esc(t.name)}</h2><p class="sub">${fresh ? esc(t.name) + ', ' : ''}codice ${esc(t.code)}${t.paid ? '' : ', da pagare'}</p></div></div>
-    <div class="stack">
-      <button class="btn wa block" data-act="send-wa">${I.wa} Invia su WhatsApp</button>
-      ${others.length > 1 ? `<button class="btn ghost block" data-act="send-all">${I.wa} Invia tutti i ${others.length} biglietti di ${esc(firstName(t.name))}</button>` : ''}
-      <button class="btn primary block" data-act="send-share">${I.share} Condividi con un'altra app</button>
-      <button class="btn ghost block" data-act="send-copy">${I.copy} Copia il link</button>
-      <a class="btn ghost block" href="${esc(ticketLink(lot, t))}">${I.eye} Guarda il biglietto</a>
+    <button class="btn wa block" data-act="send-wa">${I.wa} Invia su WhatsApp${t.phone ? ' a ' + esc(firstName(t.name)) : ''}</button>
+    ${others.length > 1 ? `<button class="link-btn" data-act="send-all" style="margin-top:8px">Invia tutti i ${others.length} biglietti di ${esc(firstName(t.name))} in un messaggio</button>` : ''}
+    <div class="quick">
+      <button data-act="send-share">${I.share}Altra app</button>
+      <button data-act="send-copy">${I.copy}Copia link</button>
+      <a href="${esc(ticketLink(lot, t))}">${I.eye}Anteprima</a>
     </div>
-    <div class="btn-row"><button class="btn ghost small" data-act="ticket" data-n="${t.n}">${I.edit} Modifica</button>${t.paid ? '' : `<button class="btn ghost small" data-act="mark-paid">Segna pagato</button>`}</div>`, 'Invia biglietto');
+    <div class="sheet-foot"><button class="link-btn" data-act="ticket" data-n="${t.n}">Modifica il biglietto</button>${t.paid ? '<span class="muted">Pagato</span>' : `<button class="btn ghost small" data-act="mark-paid">Segna pagato</button>`}</div>`, 'Invia biglietto');
 }
 function sheetTicket(lot, t){
   ui.n = t.n; ui.ticket = t;
@@ -211,7 +225,7 @@ function importBackup(){
       if(!data || data.app !== 'lotteria-cesti' || data.v !== 2 || !Array.isArray(data.lotteries)) throw 0;
       const valid = data.lotteries.filter(isValidBackupLottery);
       const clash = valid.filter(l => getLot(l.id)).length;
-      if(clash && !confirm(`${clash === 1 ? '1 estrazione è già presente' : clash + ' estrazioni sono già presenti'}. Sostituirle con la versione del backup?`)) return;
+      if(clash && !await confirmSheet({title: 'Sostituire con il backup?', text: `${clash === 1 ? '1 estrazione è già presente' : clash + ' estrazioni sono già presenti'}: verranno sostituite dalla versione del backup.`, ok: 'Sostituisci'})) return;
       const n = S.store.importLotteries(valid, {replace:true});
       closeSheet(); toast(n === 1 ? '1 estrazione ripristinata' : n + ' estrazioni ripristinate');
     }catch(e){ toast('Il file non è un backup di questa app.'); }
@@ -232,13 +246,29 @@ const curLot = () => getLot(ui.lotId);
 const curTicket = () => ticketOf(curLot(), ui.n) || ui.ticket;
 const actions = {
   'reload': () => { S.storeError = null; route(); },
+  'confirm-yes': () => answerConfirm(true),
+  'confirm-no': () => answerConfirm(false),
+  'ticket-image': async el => {
+    const p = decodeTicket(parts()[1]); if(!p) return;
+    el.disabled = true;
+    try{
+      const { ticketImage } = await import('./ticket-image.js');
+      const blob = await ticketImage(p);
+      const name = `biglietto-${p.n}.png`;
+      const file = new File([blob], name, {type: 'image/png'});
+      if(navigator.canShare && navigator.canShare({files: [file]})){
+        try{ await navigator.share({files: [file], title: `Biglietto ${p.n}`}); }catch(e){ if(e.name !== 'AbortError') download(name, blob, 'image/png'); }
+      } else { download(name, blob, 'image/png'); toast('Immagine salvata nei download'); }
+    }catch(e){ console.error(e); toast('Non sono riuscito a creare l’immagine.'); }
+    el.disabled = false;
+  },
   'sign-in': async () => {
     const err = $('#login-err'); if(err) err.textContent = '';
     try{ await S.store.signIn(); }catch(e){ const m = errorText(e); const el = $('#login-err'); if(el) el.textContent = m; else toast(m); }
   },
   'sign-out': async () => {
-    if(!confirm('Uscire dall’account? I dati restano salvati online: li ritrovi al prossimo accesso.')) return;
-    closeSheet(); migrationChecked = false; await S.store.signOut(); location.hash = '#/';
+    if(!await confirmSheet({title: 'Uscire dall’account?', text: 'I dati restano salvati online: li ritrovi al prossimo accesso.', ok: 'Esci'})) return;
+    migrationChecked = false; await S.store.signOut(); location.hash = '#/';
   },
   'home-menu': () => sheetHomeMenu(),
   'lot-menu': () => sheetLotMenu(curLot()),
@@ -274,10 +304,10 @@ const actions = {
   'send-share': () => { const lot = curLot(), t = curTicket(); shareAny(`Biglietto ${t.n}, ${lot.name}`, ticketMessage(lot, t), ticketLink(lot, t)); },
   'send-copy': async () => { const lot = curLot(), t = curTicket(); toast(await copyText(ticketLink(lot, t)) ? 'Link copiato' : 'Copia non riuscita'); },
   'share-self': () => shareAny(document.title, 'Il mio biglietto', location.href),
-  'free-num': () => {
+  'free-num': async () => {
     const t = curTicket();
-    if(!confirm(`Annullare il biglietto ${t.n} di ${t.name}? Il numero torna libero e il suo link non sarà più valido.`)) return;
-    S.store.cancelTicket(ui.lotId, t.n); closeSheet(); toast(`Biglietto ${t.n} annullato`);
+    if(!await confirmSheet({title: `Annullare il biglietto ${t.n}?`, text: `È di ${t.name}. Il numero torna libero e il link già inviato non sarà più valido.`, ok: 'Sì, annullalo', cancel: 'No', danger: true})) return;
+    S.store.cancelTicket(ui.lotId, t.n); toast(`Biglietto ${t.n} annullato`);
   },
   'live-draw': () => {
     const inputs = [...document.querySelectorAll('[name=ex]')];
@@ -287,7 +317,7 @@ const actions = {
     const n = pool[randInt(pool.length)]; slot.value = n;
     slot.classList.remove('pop'); void slot.offsetWidth; slot.classList.add('pop'); toast('Estratto il ' + n);
   },
-  'clear-draw': () => { if(!confirm('Cancellare il numero estratto e il vincitore?')) return; S.store.setResult(ui.lotId, null); },
+  'clear-draw': async () => { if(!await confirmSheet({title: 'Cancellare l’estrazione?', text: 'Il numero estratto e il vincitore vengono tolti: potrai riscriverli.', ok: 'Cancella', danger: true})) return; S.store.setResult(ui.lotId, null); },
   'notify': () => { const lot = curLot(), o = outcome(lot); if(o.winner) openWhatsApp(o.winner.phone, winnerMessage(lot, o)); },
   'share-result': () => { const lot = curLot(); shareAny('Esito ' + lot.name, resultMessage(lot), resultLink(lot, ui.nameInResult)); },
   'wa-result': () => { const lot = curLot(); openWhatsApp('', resultMessage(lot) + '\n' + resultLink(lot, ui.nameInResult)); },
@@ -297,10 +327,10 @@ const actions = {
     const nid = S.store.createLottery({...settings, secret: newSecret(), name: lot.name + ' (copia)', drawDate: '', result: null, createdAt: Date.now()});
     closeSheet(); location.hash = '#/modifica/' + nid; toast('Estrazione duplicata: scegli la nuova data');
   },
-  'delete-lot': () => {
+  'delete-lot': async () => {
     const lot = curLot();
-    if(!confirm(`Eliminare «${lot.name}» con tutti i biglietti? Non si può annullare.`)) return;
-    S.store.deleteLottery(lot.id); closeSheet(); location.hash = '#/'; toast('Estrazione eliminata');
+    if(!await confirmSheet({title: `Eliminare «${lot.name}»?`, text: `Vengono eliminati anche i ${lot.tickets.length} biglietti ceduti. Non si può annullare.`, ok: 'Elimina', danger: true})) return;
+    S.store.deleteLottery(lot.id); location.hash = '#/'; toast('Estrazione eliminata');
   }
 };
 document.addEventListener('click', e => {
@@ -319,12 +349,12 @@ document.addEventListener('input', e => {
 
 /* ---------- Form (data-form) ---------- */
 const forms = {
-  lottery(f){
+  async lottery(f){
     const err = $('#f-err'), d = Object.fromEntries(new FormData(f));
     if(!d.name.trim()){ err.textContent = "Dai un nome all'estrazione."; f.elements['name'].focus(); return; }
     if(!d.prize.trim()){ err.textContent = 'Scrivi qual è il premio.'; f.elements['prize'].focus(); return; }
     if(!d.drawDate){ err.textContent = "Scegli la data dell'estrazione."; f.elements['drawDate'].focus(); return; }
-    if(d.wheel !== 'live' && !isDrawDay(d.drawDate) && !confirm(`${fmtDate(d.drawDate)} non c'è estrazione del Lotto (si estrae martedì, giovedì, venerdì e sabato). Salvare lo stesso?`)) return;
+    if(d.wheel !== 'live' && !isDrawDay(d.drawDate) && !await confirmSheet({title: 'In quel giorno non c’è il Lotto', text: `${fmtDate(d.drawDate)} non c'è estrazione: il Lotto estrae martedì, giovedì, venerdì e sabato. Salvare lo stesso?`, ok: 'Salva lo stesso'})) return;
     const data = {name:d.name.trim(), prize:d.prize.trim(), theme:d.theme || 'altro', drawDate:d.drawDate, drawTime:d.drawTime || '20:00', wheel:d.wheel, pos:okPos(d.pos),
       rule:d.rule === 'none' ? 'none' : 'next', price:parsePrice(d.price), organizer:d.organizer.trim(), contact:d.contact.trim(), notes:d.notes.trim()};
     let id = f.dataset.id;
