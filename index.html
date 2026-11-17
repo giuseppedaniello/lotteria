@@ -719,7 +719,6 @@ function viewTicket(seg){
         <div><dt>Estrazione</dt><dd>${esc(fmtDate(p.d))}, ore ${esc(p.tm || '20:00')}</dd></div>
         <div><dt>Vinci se</dt><dd>${esc(winPhrase(p.n, p.ps, p.w))}</dd></div>
       </dl>
-      <p class="rule">${RULES[p.r]}</p>
       ${p.x ? `<p class="notes">${esc(p.x)}</p>` : ''}
     </div>
     <div class="tk-perf" aria-hidden="true"></div>

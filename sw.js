@@ -1,6 +1,6 @@
 // Service worker: l'app funziona anche offline.
 // Cambia VERSION quando pubblichi una nuova versione dei file.
-const VERSION = 'lotteria-v2';
+const VERSION = 'lotteria-v4';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', e => {
